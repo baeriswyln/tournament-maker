@@ -17,7 +17,7 @@ func NewRouter(
 ) chi.Router {
 	r := chi.NewRouter()
 
-	r.Route("/api", func(r chi.Router {
+	r.Route("/api", func(r chi.Router) {
 
 		// Global Middlewares
 		r.Use(chimiddleware.Logger)
@@ -80,7 +80,7 @@ func NewRouter(
 				})
 			})
 		})
-	}))
-	
+	})
+
 	return r
 }
