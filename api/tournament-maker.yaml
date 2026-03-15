@@ -1,0 +1,587 @@
+openapi: 3.1.0
+info:
+  title: Tournament Maker
+  description: Tournament Maker
+  version: 1.0.0
+servers:
+  - url: 'http://localhost/api'
+  - url: 'https://tournament-maker.baeriswyl.dev/api'
+paths:
+  /auth:
+    post:
+      description: Generate an access token for a specific user
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+
+    put:
+      operationId: refresh
+      description: Refresh the current access token
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Refresh successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    schema:
+                      type: string
+
+  /register:
+    post:
+      description: Register a new user. Can be with or without username/password. Without will return an access token and refresh token that can be used to authenticate.
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - visible_name
+              properties:
+                visible_name:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  expires_at:
+                    type: time-date
+
+  /users:
+    get:
+      description: Returns a list of users that participate in at least one of the tournaments the requesting user is possessing.
+      tags:
+        - user
+      responses:
+        200:
+          description: List of all users.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    visible_name:
+                      type: string
+                    username:
+                      type: string
+                    uuid:
+                      type: string
+                      format: uuid
+
+    post:
+      description: Create a new user. If only visible_name is given, a user is created that can only be a participant. If username and password are also provided, the user will be able to create tournaments.
+      tags:
+        - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - visible_name
+              properties:
+                visible_name:
+                  type: string
+                id:
+                  type: string
+                  format: uuid
+                  description: If a user previously existed as a participant, they can create an account this way while keeping past results.
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: Successful user creation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: id
+
+
+  /users/{userId}:
+    get:
+      description: Get information about a user. If user is not logged in, only gives information about themselfs. Otherwise, information about any user participating in any of their tournaments can be read.
+      tags:
+        - user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Information about a user.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  visible_name:
+                    type: string
+                  username:
+                    description: only for  the currently logged in user
+                    type: string
+                  id:
+                    type: string
+                    format: uuid
+
+    put:
+      description: Change some user information. A logged-in user can change their password.
+      tags:
+        - user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                visible_name:
+                  type: string
+                password:
+                  type: string
+
+    delete:
+      description: Delete a user. Results and tournaments are left behind without owner. A user can only delete themselfs.
+      tags:
+        - user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+
+  /tournaments:
+    get:
+      description: List all tournaments for the current user - owned and participating
+      tags:
+        - tournament
+      responses:
+        200:
+          description: The tournaments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  owning:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tournament'
+                  participating:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tournament'
+
+    post:
+      description: Create a new tournament.
+      tags:
+        - tournament
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tournament'
+      responses:
+          200:
+            description: ID of the new tournament
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+
+
+  /tournaments/{tournamentId}:
+    get:
+      description: Get a single tournament. Can only read tournaments that the user is related to (owner or participant).
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: The tournament
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tournament'
+
+
+    put:
+      description: Modify the tournament. The "state" parameter is the only one actually having an impact on the backend business logic. All other parameters are to be respected by the frontend, and are only of informative value.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tournament'
+      responses:
+        200:
+          description: Update ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tournament'
+
+    delete:
+      description: Deletes the tournament including encounters and participant relations.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: Tournament deleted.
+
+  /tournaments/{tournamentId}/reset:
+    delete:
+      description: Resets the tournament - remove all encounters. Participants are kept.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: Tournament reset successful.
+
+  /tournaments/{tournamentId}/participants:
+    get:
+      description: List all participants of a tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - tournament
+      responses:
+        200:
+          description: List of all participants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    visible_name:
+                      type: string
+                    id:
+                      type: string
+                      format: uuid
+                    encounters:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                        finished:
+                          type: integer
+                        score:
+                          type: integer
+
+    post:
+      description: Add a participant.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+
+    delete:
+      description: Remove a participant. If the participant is removed after the tournament has started, the encounters and results will remain but the second participant is no longer listed.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+
+
+  /tournaments/{tournamentId}/encounters:
+    get:
+      description: Lists all encounters of a tournament. Can be filtered by a specific participant.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          description: Optional filter by user
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: A list of (optionally filtered) encounters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Encounter'
+
+    post:
+      description: Create a list of encounters.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  partyA:
+                    type: string
+                    format: uuid
+                  partyB:
+                    type: string
+                    format: uuid
+                  round:
+                    type: string
+
+    put:
+      description: Update the score of an encounter. Tournament owner can enter final results, while a normal party can only propose a result - second party has to agree for the result to be final.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Encounter'
+
+    delete:
+      description: Delete the score of an encounter - the encounter will not be deleted.
+      tags:
+        - tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                partyA:
+                  type: string
+                  format: uuid
+                partyB:
+                  type: string
+                  format: uuid
+                round:
+                  type: string
+
+components:
+  schemas:
+    Tournament:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        nb_participants:
+          type: integer
+        visibility:
+          type: object
+          description: these options are only instructions for the frontend
+          properties:
+            scoreboard:
+              type: boolean
+            scores:
+              type: boolean
+        format:
+          type: object
+          properties:
+            name:
+              type: string
+            nb_groups:
+              type: string
+            nb_endrounds:
+              type: integer
+        state:
+          type: string
+          enum: [ draft, open, live, closed ]
+    Encounter:
+      type: object
+      required:
+        - partyA
+        - partyB
+        - round
+        - state
+      properties:
+        partyA:
+          type: string
+          format: uuid
+        partyB:
+          type: string
+          format: uuid
+        round:
+          type: string
+        scoreA:
+          type: integer
+        scoreB:
+          type: integer
+        state:
+          type: string
+          enum:
+            - voted
+            - final
+            - planned

@@ -1,0 +1,53 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./api
+    develop:
+      watch:
+        - action: rebuild
+          path: ./api
+          ignore:
+            - ./tmp
+            - ./**/*.log
+            - ./.devbox
+    env_file:
+      - ./api/.env
+    ports:
+      - "8080:8080"
+    networks:
+      - tournament-maker
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: change-me-in-production
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-db-tournament-maker:/var/lib/postgresql/18/docker
+    networks:
+      - tournament-maker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+    env_file:
+      - ./frontend/.env
+    ports: 
+      - "8888:80"
+
+networks:
+  tournament-maker:
+    name: tournament-maker
+
+volumes:
+  postgres-db-tournament-maker:
