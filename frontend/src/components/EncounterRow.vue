@@ -7,7 +7,6 @@
       </span>
       <span :class="encounterBadgeClass">{{ encounterStateLabel }}</span>
     </div>
-
     <!-- Match layout -->
     <div class="flex items-center gap-2">
       <!-- Party A -->
@@ -65,10 +64,10 @@
         <button v-if="!isOwner  && canConfirmVote" @click="submitScore" class="btn-ghost btn-sm text-xs" style="color: var(--brand)">
           <i class="pi pi-check text-xs" /> {{ t('confirm_score') }}
         </button>
-        <button v-if="isOwner && encounter.state !== 'planned'" @click="deleteScore" class="btn-ghost btn-sm text-xs text-yellow-500">
+        <button v-if="isOwner && encounter.state !== 'planned'" @click="handleResetScore" class="btn-ghost btn-sm text-xs text-yellow-500">
           <i class="pi pi-refresh text-xs" /> {{ t('reset_score') }}
         </button>
-        <button v-if="isOwner" @click="deleteEncounter" class="btn-ghost btn-sm text-xs text-red-400">
+        <button v-if="isOwner" @click="handleDeleteEncounter" class="btn-ghost btn-sm text-xs text-red-400">
           <i class="pi pi-trash text-xs" /> {{ t('delete_encounter') }}
         </button>
       </div>
@@ -114,6 +113,7 @@ import { ref, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { encountersApi } from '@/api'
 import { useI18n } from '@/i18n/index.js'
+import {useConfirm} from "primevue/useconfirm";
 
 const props = defineProps({
   encounter: { type: Object, required: true },
@@ -125,6 +125,7 @@ const props = defineProps({
 const emit = defineEmits(['score-changed'])
 const toast = useToast()
 const { t } = useI18n()
+const confirm = useConfirm()
 
 const showScoreForm = ref(false)
 const submitting = ref(false)
@@ -148,6 +149,9 @@ const encounterStateLabel = computed(() => {
 const encounterBadgeClass = computed(() => {
   const map = { final: 'badge-final', voted: 'badge-voted', planned: 'badge-planned' }
   return `badge ${map[props.encounter.state] || 'badge-planned'}`
+})
+const encounterDescription = computed(() => {
+  return {description: `${getParticipantName(props.encounter.partyA)} vs ${getParticipantName(props.encounter.partyB)} (${props.encounter.round})`}
 })
 
 function getParticipantName(id) {
@@ -184,7 +188,17 @@ async function submitScore() {
   }
 }
 
-async function deleteScore() {
+function handleResetScore() {
+  confirm.require({
+    message: t('confirm_reset_score', encounterDescription.value),
+    header: t('confirm'),
+    accept: async () => {
+      await(resetScore())
+    }
+  })
+}
+
+async function resetScore() {
   submitting.value = true
   try {
     await encountersApi.deleteScore(props.tournamentId, {
@@ -200,6 +214,16 @@ async function deleteScore() {
   } finally {
     submitting.value = false
   }
+}
+
+function handleDeleteEncounter() {
+  confirm.require({
+    message: t('confirm_delete_encounter', encounterDescription.value),
+    header: t('confirm'),
+    accept: async () => {
+      await(deleteEncounter())
+    }
+  })
 }
 
 async function deleteEncounter() {
