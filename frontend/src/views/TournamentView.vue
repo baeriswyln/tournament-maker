@@ -60,24 +60,43 @@
             <i class="pi pi-clock text-3xl mb-3 block" style="color: var(--text-faint)" />
             <p class="text-sm" style="color: var(--text-muted)">{{ t('no_upcoming') }}</p>
           </div>
-          <EncounterRow v-for="e in upcomingEncounters"
+          <div v-if="upcomingEncounters.length" class="pb-3">
+            <label class="input-label">{{ t('search_encounters') }}</label>
+            <input v-model="upcomingEncounterSearch" type="text" class="input py-2 text-sm"/>
+          </div>
+          <div v-if="!filteredUpcomingEncounters.length" class="card p-8 text-center text-sm" style="color: var(--text-muted)">
+            {{ t('no_encounters') }}
+          </div>
+          <div v-else-if="!filteredUpcomingEncounters.length" class="card p-8 text-center">
+            <i class="pi pi-check-circle text-3xl mb-3 block" style="color: var(--text-faint)" />
+            <p class="text-sm" style="color: var(--text-muted)">{{ t('encounter_not_found') }}</p>
+          </div>
+          <EncounterRow v-for="e in filteredUpcomingEncounters"
             :key="`${e.partyA}-${e.partyB}-${e.round}`"
             :encounter="e" :participants="store.participants"
             :current-user-id="auth.user?.id" :tournament-id="tournamentId"
-            :is-owner="isOwner" @score-changed="refreshEncounters" />
+            :is-owner="false" @score-changed="refreshEncounters" />
         </div>
 
         <!-- Past -->
         <div v-else-if="activeTab === 'past'" key="past" class="space-y-3 animate-slide-up">
+          <div v-if="pastEncounters.length" class="pb-3">
+            <label class="input-label">{{ t('search_encounters') }}</label>
+            <input v-model="pastEncounterSearch" type="text" class="input py-2 text-sm"/>
+          </div>
           <div v-if="!pastEncounters.length" class="card p-8 text-center">
             <i class="pi pi-check-circle text-3xl mb-3 block" style="color: var(--text-faint)" />
             <p class="text-sm" style="color: var(--text-muted)">{{ t('no_past') }}</p>
           </div>
-          <EncounterRow v-for="e in pastEncounters"
+          <div v-else-if="!filteredPastEncounters.length" class="card p-8 text-center">
+            <i class="pi pi-check-circle text-3xl mb-3 block" style="color: var(--text-faint)" />
+            <p class="text-sm" style="color: var(--text-muted)">{{ t('encounter_not_found') }}</p>
+          </div>
+          <EncounterRow v-for="e in filteredPastEncounters"
             :key="`${e.partyA}-${e.partyB}-${e.round}`"
             :encounter="e" :participants="store.participants"
             :current-user-id="auth.user?.id" :tournament-id="tournamentId"
-            :is-owner="isOwner" @score-changed="refreshEncounters" />
+            :is-owner="false" @score-changed="refreshEncounters" />
         </div>
 
         <!-- Scoreboard -->
@@ -134,6 +153,8 @@ const { t } = useI18n()
 const tournamentId = route.params.id
 const activeTab = ref('upcoming')
 const loading = ref(true)
+const upcomingEncounterSearch = ref('')
+const pastEncounterSearch = ref('')
 
 const isOwner = computed(() =>
   store.owning?.some(x => x.id === tournamentId) || store.current?.owner_id === auth.user?.id
@@ -159,6 +180,32 @@ const availableTabs = computed(() => {
   if (showScoreboard.value) tabs.push({ id: 'scoreboard', label: t('scoreboard') })
   tabs.push({ id: 'players', label: t('players'), count: store.participants.length })
   return tabs
+})
+
+function getParticipantName(id) {
+  return store.participants.find(p => p.id === id)?.visible_name.toLowerCase()
+}
+
+const filteredUpcomingEncounters = computed(() => {
+  const terms = upcomingEncounterSearch.value.trim().toLowerCase().split(' ')
+
+  if (!terms.length) return upcomingEncounters.value
+  return upcomingEncounters.value.filter(e => terms.every(t =>
+      getParticipantName(e.partyA).includes(t) ||
+      getParticipantName(e.partyB).includes(t) ||
+      e.round.toLowerCase().includes(t)
+  ))
+})
+
+const filteredPastEncounters = computed(() => {
+  const terms = pastEncounterSearch.value.trim().toLowerCase().split(' ')
+
+  if (!terms.length) return pastEncounters.value
+  return pastEncounters.value.filter(e => terms.every(t =>
+      getParticipantName(e.partyA).includes(t) ||
+      getParticipantName(e.partyB).includes(t) ||
+      e.round.toLowerCase().includes(t)
+  ))
 })
 
 function formatDate(d) {

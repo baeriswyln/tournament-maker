@@ -203,7 +203,7 @@
               </div>
 
               <div v-if="activeEncounterTab === 'generate'" key="generate" class="space-y-3 animate-slide-up">
-                <h2>{{t('generate_encounters_description')}}</h2>
+                <h2>{{ t('generate_encounters_description') }}</h2>
 
                 <div class="flex gap-2 flex-wrap justify-between">
                   <div v-for="group in groups" class="card flex-1">
@@ -280,12 +280,15 @@
               </div>
             </div>
           </Transition>
-
+          <div v-if="store.encounters.length" class="pb-3">
+            <label class="input-label">{{ t('search_encounters') }}</label>
+            <input v-model="encounterSearch" type="text" class="input py-2 text-sm"/>
+          </div>
           <div class="space-y-2 max-h-[640px] overflow-y-auto">
-            <div v-if="!store.encounters.length" class="card p-8 text-center text-sm" style="color: var(--text-muted)">
+            <div v-if="!filteredEncounters.length" class="card p-8 text-center text-sm" style="color: var(--text-muted)">
               {{ t('no_encounters') }}
             </div>
-            <EncounterRow v-for="e in store.encounters"
+            <EncounterRow v-for="e in filteredEncounters"
                           :key="`${e.partyA}-${e.partyB}-${e.round}`"
                           :encounter="e" :participants="store.participants"
                           :tournament-id="tournamentId" :is-owner="true"
@@ -349,6 +352,7 @@ const qrCanvas = ref(null)
 const newEncounter = ref({partyA: '', partyB: '', round: 'R1'})
 const activeEncounterTab = ref('generate')
 const groups = ref([])
+const encounterSearch = ref('')
 
 const states = computed(() => [
   {value: 'draft', label: t('state_draft')},
@@ -374,6 +378,21 @@ const filteredUsers = computed(() => {
     if (!addSearch.value) return true
     return (u.visible_name + u.username).toLowerCase().includes(addSearch.value.toLowerCase())
   })
+})
+
+function getParticipantName(id) {
+  return store.participants.find(p => p.id === id)?.visible_name.toLowerCase()
+}
+
+const filteredEncounters = computed(() => {
+  const terms = encounterSearch.value.trim().toLowerCase().split(' ')
+
+  if (!terms.length) return store.encounters
+  return store.encounters.filter(e => terms.every(t =>
+          getParticipantName(e.partyA).includes(t) ||
+          getParticipantName(e.partyB).includes(t) ||
+          e.round.toLowerCase().includes(t)
+  ))
 })
 
 const availableTabs = computed(() => {
@@ -479,10 +498,10 @@ function generateGroups() {
   shuffle(group_assignments)
 
   groups.value = []
-  for(let gid = 1; gid <= nb_groups; gid++) {
+  for (let gid = 1; gid <= nb_groups; gid++) {
     groups.value.push({
       "name": `${t('group')} ${gid}`,
-      "participants": store.participants.filter((e, idx) => gid-1 === group_assignments[idx])
+      "participants": store.participants.filter((e, idx) => gid - 1 === group_assignments[idx])
     })
   }
 }
@@ -492,8 +511,8 @@ async function generateGroupEncounters() {
 
   const encounters = []
   for (let i = 0; i < groups.value.length; i++) {
-    for (let pi1 = 0; pi1 < groups.value[i].participants.length-1; pi1++) {
-      for (let pi2 = pi1+1; pi2 < groups.value[i].participants.length; pi2++) {
+    for (let pi1 = 0; pi1 < groups.value[i].participants.length - 1; pi1++) {
+      for (let pi2 = pi1 + 1; pi2 < groups.value[i].participants.length; pi2++) {
         encounters.push({
           partyA: groups.value[i].participants[pi1].id,
           partyB: groups.value[i].participants[pi2].id,

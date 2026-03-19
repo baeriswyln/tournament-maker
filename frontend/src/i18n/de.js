@@ -94,6 +94,8 @@ export default {
   generate_groups: 'Gruppen generieren',
   generate_encounters: 'Begegnungen generieren',
   generate_encounters_description: 'Automatisches Generieren von Begegnungen. Innerhalb einer Gruppe treffen alle Teilnehmenden einmal aufeinander.',
+  encounter_not_found: 'Suche ergab keine Begegnungen',
+  search_encounters: 'Suche nach Begegnungen',
 
   // Encounter states
   state_planned: 'Geplant',
