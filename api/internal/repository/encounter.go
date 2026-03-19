@@ -61,3 +61,10 @@ func (r *EncounterRepository) ClearScore(tournamentID, partyA, partyB uuid.UUID,
 			"state":   models.EncounterStatePlanned,
 		}).Error
 }
+
+func (r *EncounterRepository) DeleteEncounter(tournamentID, partyA, partyB uuid.UUID, round string) error {
+	return r.db.
+		Where("tournament_id = ? AND party_a = ? AND party_b = ? AND round = ?",
+			tournamentID, partyA, partyB, round).
+		Delete(&models.Encounter{}).Error
+}

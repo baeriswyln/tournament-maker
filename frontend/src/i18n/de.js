@@ -74,10 +74,16 @@ export default {
   // Encounter
   round: 'Runde',
   enter_score: 'Ergebnis eingeben',
+  reset_score: 'Ergebnis zurücksetzen',
+  delete_encounter: 'Begegnung löschen',
   propose_score: 'Ergebnis vorschlagen',
   set_final_score: 'Endergebnis festlegen',
+  confirm_score: 'Ergebnis bestätigen',
   score_saved: 'Ergebnis gespeichert!',
+  score_reset: 'Ergebnis zurückgesetzt!',
+  encounter_deleted: 'Begegnung gelöscht!',
   score_proposed_notice: 'Ergebnis vorgeschlagen — wartet auf Bestätigung',
+  score_proposed_notice_with_name: 'Ergebnis vorgeschlagen von {name} — wartet auf Bestätigung',
   opponent_must_agree: 'Ihr Gegner muss das Ergebnis bestätigen.',
   you: 'Sie',
 

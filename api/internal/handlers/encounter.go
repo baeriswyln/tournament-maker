@@ -134,7 +134,7 @@ func (e *EncounterHandler) UpdateEncounterScore(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if body.PartyA != requesterID && body.PartyB != requesterID {
+	if body.PartyA != requesterID && body.PartyB != requesterID && !e.tournaments.IsOwner(tournamentId, requesterID) {
 		writeError(w, http.StatusForbidden, "forbidden")
 		return
 	}
@@ -175,7 +175,7 @@ func (e *EncounterHandler) UpdateEncounterScore(w http.ResponseWriter, r *http.R
 		encounter.VoterID = &requesterID
 		encounter.State = models.EncounterStateVoted
 	} else if encounter.State == models.EncounterStateVoted {
-		if encounter.ScoreA != body.ScoreA || encounter.ScoreB != body.ScoreB || *encounter.VoterID == requesterID {
+		if *encounter.ScoreA != *body.ScoreA || *encounter.ScoreB != *body.ScoreB || *encounter.VoterID == requesterID {
 			writeError(w, http.StatusForbidden, "forbidden")
 			return
 		}
@@ -217,9 +217,16 @@ func (e *EncounterHandler) DeleteEncounterScore(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := e.encounters.ClearScore(tournamentId, body.PartyA, body.PartyB, body.Round); err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error")
-		return
+	if body.Delete {
+		if err := e.encounters.DeleteEncounter(tournamentId, body.PartyA, body.PartyB, body.Round); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+	} else {
+		if err := e.encounters.ClearScore(tournamentId, body.PartyA, body.PartyB, body.Round); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

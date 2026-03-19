@@ -26,7 +26,7 @@ type Encounter struct {
 	ScoreA       *int           `                                   json:"scoreA,omitempty"`
 	ScoreB       *int           `                                   json:"scoreB,omitempty"`
 	State        EncounterState `gorm:"default:planned"             json:"state"`
-	VoterID      *uuid.UUID     `gorm:"type:uuid;primaryKey"        json:"-"`
+	VoterID      *uuid.UUID     `gorm:"type:uuid"                   json:"voter_id,omitempty"`
 	CreatedAt    time.Time      `                                   json:"created_at"`
 	UpdatedAt    time.Time      `                                   json:"updated_at"`
 
@@ -61,4 +61,5 @@ type DeleteEncounterRequest struct {
 	PartyA uuid.UUID `json:"partyA"`
 	PartyB uuid.UUID `json:"partyB"`
 	Round  string    `json:"round"`
+	Delete bool      `json:"delete,default:false"`
 }

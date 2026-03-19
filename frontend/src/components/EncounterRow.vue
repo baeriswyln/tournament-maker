@@ -57,10 +57,19 @@
     </div>
 
     <!-- Score entry -->
-    <div v-if="canEnterScore" class="mt-4 pt-3" style="border-top: 1px solid var(--border)">
-      <div v-if="!showScoreForm" class="flex justify-center">
-        <button @click="showScoreForm = true" class="btn-ghost btn-sm text-xs" style="color: var(--brand)">
+    <div v-if="canEnterScore || canConfirmVote || isOwner" class="mt-4 pt-3" style="border-top: 1px solid var(--border)">
+      <div v-if="!showScoreForm" class="flex justify-center flex-wrap">
+        <button v-if="isOwner || encounter.state === 'planned'" @click="showScoreForm = true" class="btn-ghost btn-sm text-xs" style="color: var(--brand)">
           <i class="pi pi-pencil text-xs" /> {{ t('enter_score') }}
+        </button>
+        <button v-if="!isOwner  && canConfirmVote" @click="submitScore" class="btn-ghost btn-sm text-xs" style="color: var(--brand)">
+          <i class="pi pi-check text-xs" /> {{ t('confirm_score') }}
+        </button>
+        <button v-if="isOwner && encounter.state !== 'planned'" @click="deleteScore" class="btn-ghost btn-sm text-xs text-yellow-500">
+          <i class="pi pi-refresh text-xs" /> {{ t('reset_score') }}
+        </button>
+        <button v-if="isOwner" @click="deleteEncounter" class="btn-ghost btn-sm text-xs text-red-400">
+          <i class="pi pi-trash text-xs" /> {{ t('delete_encounter') }}
         </button>
       </div>
       <div v-else class="space-y-3">
@@ -91,11 +100,11 @@
     </div>
 
     <!-- Voted notice -->
-    <div v-if="encounter.state === 'voted' && !showScoreForm"
+    <div v-if="encounter.state === 'voted' && !showScoreForm && !canConfirmVote"
       class="mt-3 pt-3 flex items-center gap-2 text-xs"
       style="border-top: 1px solid var(--border); color: var(--amber)">
       <i class="pi pi-clock" />
-      {{ t('score_proposed_notice') }}
+      {{ isOwner ? t('score_proposed_notice_with_name', {name: getParticipantName(encounter.voter_id)}) : t('score_proposed_notice') }}
     </div>
   </div>
 </template>
@@ -113,7 +122,7 @@ const props = defineProps({
   tournamentId: { type: String, required: true },
   isOwner: { type: Boolean, default: false }
 })
-const emit = defineEmits(['score-submitted'])
+const emit = defineEmits(['score-changed'])
 const toast = useToast()
 const { t } = useI18n()
 
@@ -125,7 +134,11 @@ const isInvolved = computed(() =>
   props.currentUserId === props.encounter.partyA || props.currentUserId === props.encounter.partyB
 )
 const canEnterScore = computed(() =>
-  props.encounter.state !== 'final' && (props.isOwner || isInvolved.value)
+  props.encounter.state === 'planned' && (props.isOwner || isInvolved.value)
+)
+
+const canConfirmVote = computed(() =>
+    props.encounter.state === 'voted' && !props.isOwner && props.currentUserId !== props.encounter.voter_id
 )
 
 const encounterStateLabel = computed(() => {
@@ -163,7 +176,44 @@ async function submitScore() {
     })
     toast.add({ severity: 'success', summary: t('score_saved'), life: 2000 })
     showScoreForm.value = false
-    emit('score-submitted')
+    emit('score-changed')
+  } catch (e) {
+    toast.add({ severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000 })
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function deleteScore() {
+  submitting.value = true
+  try {
+    await encountersApi.deleteScore(props.tournamentId, {
+      partyA: props.encounter.partyA,
+      partyB: props.encounter.partyB,
+      round: props.encounter.round,
+    })
+    toast.add({ severity: 'success', summary: t('score_reset'), life: 2000 })
+    showScoreForm.value = false
+    emit('score-changed')
+  } catch (e) {
+    toast.add({ severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000 })
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function deleteEncounter() {
+  submitting.value = true
+  try {
+    await encountersApi.deleteScore(props.tournamentId, {
+      partyA: props.encounter.partyA,
+      partyB: props.encounter.partyB,
+      round: props.encounter.round,
+      'delete': true
+    })
+    toast.add({ severity: 'success', summary: t('encounter_deleted'), life: 2000 })
+    showScoreForm.value = false
+    emit('score-changed')
   } catch (e) {
     toast.add({ severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000 })
   } finally {

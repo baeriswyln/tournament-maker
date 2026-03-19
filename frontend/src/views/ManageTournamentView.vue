@@ -232,7 +232,7 @@
                           :key="`${e.partyA}-${e.partyB}-${e.round}`"
                           :encounter="e" :participants="store.participants"
                           :tournament-id="tournamentId" :is-owner="true"
-                          @score-submitted="store.fetchEncounters(tournamentId)"/>
+                          @score-changed="store.fetchEncounters(tournamentId)"/>
           </div>
         </div>
       </div>

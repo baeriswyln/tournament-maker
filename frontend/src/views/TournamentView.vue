@@ -64,7 +64,7 @@
             :key="`${e.partyA}-${e.partyB}-${e.round}`"
             :encounter="e" :participants="store.participants"
             :current-user-id="auth.user?.id" :tournament-id="tournamentId"
-            :is-owner="isOwner" @score-submitted="refreshEncounters" />
+            :is-owner="isOwner" @score-changed="refreshEncounters" />
         </div>
 
         <!-- Past -->
@@ -77,7 +77,7 @@
             :key="`${e.partyA}-${e.partyB}-${e.round}`"
             :encounter="e" :participants="store.participants"
             :current-user-id="auth.user?.id" :tournament-id="tournamentId"
-            :is-owner="isOwner" @score-submitted="refreshEncounters" />
+            :is-owner="isOwner" @score-changed="refreshEncounters" />
         </div>
 
         <!-- Scoreboard -->
