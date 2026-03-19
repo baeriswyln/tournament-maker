@@ -152,7 +152,8 @@ func (e *EncounterHandler) UpdateEncounterScore(w http.ResponseWriter, r *http.R
 	if e.tournaments.IsOwner(encounter.TournamentID, requesterID) {
 		encounter.ScoreA = body.ScoreA
 		encounter.ScoreB = body.ScoreB
-		encounter.State = models.EncounterStateFinal
+		encounter.State = body.State
+		encounter.VoterID = &requesterID
 
 		if err := e.encounters.Update(encounter); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal server error")
