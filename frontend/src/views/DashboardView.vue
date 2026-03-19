@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-6xl mx-auto">
+  <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-[100vw] lg:max-w-6xl mx-auto">
     <!-- Header -->
     <div class="flex items-start justify-between mb-8 animate-slide-up">
       <div>

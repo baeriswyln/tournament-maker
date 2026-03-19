@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-2xl mx-auto">
+  <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-[100vw] md:max-w-2xl mx-auto">
     <!-- Scanner card -->
     <div class="card overflow-hidden mb-4 animate-slide-up" style="animation-delay: 0.05s">
 

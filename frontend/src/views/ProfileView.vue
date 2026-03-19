@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-xl mx-auto">
+  <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-[100vw] sm:max-w-xl mx-auto">
     <h1 class="font-display text-2xl font-bold mb-8 animate-slide-up" style="color: var(--text-primary)">
       {{ t('profile') }}
     </h1>

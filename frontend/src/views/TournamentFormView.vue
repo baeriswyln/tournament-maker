@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-2xl mx-auto">
+  <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-[100vw] md:max-w-2xl mx-auto">
     <div class="flex items-center gap-3 mb-8 animate-slide-up">
       <button @click="$router.back()" class="btn-ghost btn-sm p-2">
         <i class="pi pi-arrow-left" />
