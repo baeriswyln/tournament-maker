@@ -18,7 +18,7 @@
         <RouterLink :to="`/tournaments/${tournamentId}`" class="btn-ghost btn-sm">
           <i class="pi pi-eye"/> {{ t('view') }}
         </RouterLink>
-        <RouterLink :to="`/tournaments/new`" class="btn-secondary btn-sm">
+        <RouterLink :to="`/tournaments/${tournamentId}/edit`" class="btn-secondary btn-sm">
           <i class="pi pi-pencil"/>
         </RouterLink>
       </div>
@@ -30,7 +30,7 @@
                   class="w-14 h-14 rounded-2xl flex items-center justify-center btn-secondary">
         <i class="pi pi-eye text-xl"/>
       </RouterLink>
-      <RouterLink :to="`/tournaments/new`"
+      <RouterLink :to="`/tournaments/${tournamentId}/edit`"
                   class="z-20 w-14 h-14 rounded-2xl flex items-center justify-center btn-secondary">
         <i class="pi pi-pencil text-xl"/>
       </RouterLink>
@@ -189,37 +189,94 @@
           <!-- Add encounter panel -->
           <Transition name="slide-up">
             <div v-if="showEncounterForm" class="card p-4 mb-3 space-y-3">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="input-label">{{ t('player_a') }}</label>
-                  <select v-model="newEncounter.partyA" class="input py-2 text-sm">
-                    <option value="">{{ t('select_player') }}</option>
-                    <option v-for="p in store.participants" :key="p.id" :value="p.id">{{ p.visible_name }}</option>
-                  </select>
+              <div class="flex gap-1 p-1 rounded-xl mb-6 overflow-x-auto animate-slide-up flex-wrap"
+                   style="background: var(--bg-subtle); animation-delay: 0.05s">
+                <button v-for="tab in availableTabs" :key="tab.id"
+                        @click="activeEncounterTab = tab.id"
+                        class="flex-1 min-w-fit py-2 px-3 rounded-lg text-sm font-display font-medium transition-all whitespace-nowrap"
+                        :style="activeEncounterTab === tab.id
+            ? 'background: var(--surface); color: var(--text-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.08)'
+            : 'color: var(--text-muted)'"
+                >
+                  {{ tab.label }}
+                </button>
+              </div>
+
+              <div v-if="activeEncounterTab === 'generate'" key="generate" class="space-y-3 animate-slide-up">
+                <h2>{{t('generate_encounters_description')}}</h2>
+
+                <div class="flex gap-2 flex-wrap justify-between">
+                  <div v-for="group in groups" class="card flex-1">
+                    <h2 class="px-4 py-2">{{ group.name }}</h2>
+                    <div v-for="(p, i) in group.participants" :key="p.id"
+                         class="flex items-center gap-3 px-4 py-3"
+                         :style="i > 0 ? 'border-top: 1px solid var(--border)' : ''">
+                      <div
+                          class="w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-sm shrink-0"
+                          style="background: var(--bg-subtle); color: var(--text-muted)">
+                        {{ p.visible_name?.[0]?.toUpperCase() || '?' }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate" style="color: var(--text-primary)">{{
+                            p.visible_name
+                          }}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+                <button @click="generateGroups" class="btn-primary btn-sm text-xs w-full">{{ t('generate_groups') }}
+                </button>
+
                 <div>
-                  <label class="input-label">{{ t('player_b') }}</label>
-                  <select v-model="newEncounter.partyB" class="input py-2 text-sm">
-                    <option value="">{{ t('select_player') }}</option>
-                    <option v-for="p in store.participants" :key="p.id" :value="p.id"
-                            :disabled="p.id === newEncounter.partyA">{{ p.visible_name }}
-                    </option>
-                  </select>
+                  <label class="input-label">{{ t('round') }}</label>
+                  <input v-model="newEncounter.round" type="text" class="input py-2 text-sm" placeholder="R1, Final…"/>
+                </div>
+
+                <div class="flex gap-2">
+                  <button @click="generateGroupEncounters"
+                          :disabled="!groups.length"
+                          class="btn-primary btn-sm flex-1 text-xs">{{ t('generate_encounters') }}
+                  </button>
+                  <button @click="showEncounterForm = false; groups = []" class="btn-secondary btn-sm px-3 text-xs">{{
+                      t('cancel')
+                    }}
+                  </button>
                 </div>
               </div>
-              <div>
-                <label class="input-label">{{ t('round') }}</label>
-                <input v-model="newEncounter.round" type="text" class="input py-2 text-sm" placeholder="R1, Final…"/>
-              </div>
-              <div class="flex gap-2">
-                <button @click="handleAddEncounter"
-                        :disabled="!newEncounter.partyA || !newEncounter.partyB"
-                        class="btn-primary btn-sm flex-1 text-xs">{{ t('add_encounter') }}
-                </button>
-                <button @click="showEncounterForm = false" class="btn-secondary btn-sm px-3 text-xs">{{
-                    t('cancel')
-                  }}
-                </button>
+
+              <div v-if="activeEncounterTab === 'manual'" key="manual" class="space-y-3 animate-slide-up">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="input-label">{{ t('player_a') }}</label>
+                    <select v-model="newEncounter.partyA" class="input py-2 text-sm">
+                      <option value="">{{ t('select_player') }}</option>
+                      <option v-for="p in store.participants" :key="p.id" :value="p.id">{{ p.visible_name }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="input-label">{{ t('player_b') }}</label>
+                    <select v-model="newEncounter.partyB" class="input py-2 text-sm">
+                      <option value="">{{ t('select_player') }}</option>
+                      <option v-for="p in store.participants" :key="p.id" :value="p.id"
+                              :disabled="p.id === newEncounter.partyA">{{ p.visible_name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="input-label">{{ t('round') }}</label>
+                  <input v-model="newEncounter.round" type="text" class="input py-2 text-sm" placeholder="R1, Final…"/>
+                </div>
+                <div class="flex gap-2">
+                  <button @click="handleAddEncounter"
+                          :disabled="!newEncounter.partyA || !newEncounter.partyB"
+                          class="btn-primary btn-sm flex-1 text-xs">{{ t('add_encounter') }}
+                  </button>
+                  <button @click="showEncounterForm = false" class="btn-secondary btn-sm px-3 text-xs">{{
+                      t('cancel')
+                    }}
+                  </button>
+                </div>
               </div>
             </div>
           </Transition>
@@ -290,6 +347,8 @@ const addSearch = ref('')
 const selectedUserIds = ref([])
 const qrCanvas = ref(null)
 const newEncounter = ref({partyA: '', partyB: '', round: 'R1'})
+const activeEncounterTab = ref('generate')
+const groups = ref([])
 
 const states = computed(() => [
   {value: 'draft', label: t('state_draft')},
@@ -315,6 +374,14 @@ const filteredUsers = computed(() => {
     if (!addSearch.value) return true
     return (u.visible_name + u.username).toLowerCase().includes(addSearch.value.toLowerCase())
   })
+})
+
+const availableTabs = computed(() => {
+  const tabs = [
+    {id: 'generate', label: t('create_encounter_generate')},
+    {id: 'manual', label: t('create_encounter_manual')},
+  ]
+  return tabs
 })
 
 async function openQrModal() {
@@ -382,6 +449,66 @@ function handleRemoveParticipant(id) {
       toast.add({severity: 'info', summary: t('removed'), life: 2000})
     }
   })
+}
+
+// -- encounter generation --------------------
+function shuffle(array) {
+  // source: https://stackoverflow.com/a/2450976
+  let currentIndex = array.length;
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+
+    // Pick a remaining element...
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+}
+
+function generateGroups() {
+  const nb_participants = store.participants.length
+  const nb_groups = store.current.format.nb_groups
+  const group_assignments = []
+  for (let i = 0; i < nb_participants; i++) {
+    group_assignments.push(i % nb_groups);
+  }
+  shuffle(group_assignments)
+
+  groups.value = []
+  for(let gid = 1; gid <= nb_groups; gid++) {
+    groups.value.push({
+      "name": `${t('group')} ${gid}`,
+      "participants": store.participants.filter((e, idx) => gid-1 === group_assignments[idx])
+    })
+  }
+}
+
+async function generateGroupEncounters() {
+  if (!groups.value.length || groups.value.some(g => !g.participants.length)) return
+
+  const encounters = []
+  for (let i = 0; i < groups.value.length; i++) {
+    for (let pi1 = 0; pi1 < groups.value[i].participants.length-1; pi1++) {
+      for (let pi2 = pi1+1; pi2 < groups.value[i].participants.length; pi2++) {
+        encounters.push({
+          partyA: groups.value[i].participants[pi1].id,
+          partyB: groups.value[i].participants[pi2].id,
+          round: newEncounter.value.round
+        })
+      }
+    }
+  }
+
+  try {
+    await store.createEncounters(tournamentId, encounters)
+    toast.add({severity: 'success', summary: t('encounter_added'), life: 2000})
+  } catch (e) {
+    toast.add({severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000})
+  }
 }
 
 async function handleAddEncounter() {

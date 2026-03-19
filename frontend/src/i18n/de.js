@@ -88,6 +88,12 @@ export default {
   score_proposed_notice_with_name: 'Ergebnis vorgeschlagen von {name} — wartet auf Bestätigung',
   opponent_must_agree: 'Ihr Gegner muss das Ergebnis bestätigen.',
   you: 'Sie',
+  create_encounter_generate: 'Generieren',
+  create_encounter_manual: 'Manuell',
+  group: "Gruppe",
+  generate_groups: 'Gruppen generieren',
+  generate_encounters: 'Begegnungen generieren',
+  generate_encounters_description: 'Automatisches Generieren von Begegnungen. Innerhalb einer Gruppe treffen alle Teilnehmenden einmal aufeinander.',
 
   // Encounter states
   state_planned: 'Geplant',

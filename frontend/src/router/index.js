@@ -41,6 +41,12 @@ const routes = [
         component: () => import('@/views/ManageTournamentView.vue')
       },
       {
+        path: 'tournaments/:id/edit',
+        meta: {requiresAdmin: true},
+        name: 'EditTournament',
+        component: () => import('@/views/TournamentFormView.vue')
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/ProfileView.vue')
