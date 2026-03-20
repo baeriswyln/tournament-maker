@@ -80,7 +80,7 @@ func (r *UserRepository) ListByOwnerTournaments(ownerID uuid.UUID) ([]models.Use
 func (r *UserRepository) IsOwner(userID uuid.UUID, ownerID uuid.UUID) bool {
 	var count int64
 	r.db.Model(&models.User{}).
-		Where("user_id = ? AND owner_id = ?", userID, ownerID).
+		Where("id = ? AND owner_id = ?", userID, ownerID).
 		Count(&count)
 	return count > 0
 }

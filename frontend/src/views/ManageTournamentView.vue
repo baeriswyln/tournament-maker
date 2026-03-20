@@ -109,35 +109,71 @@
           <!-- Add participant panel -->
           <Transition name="slide-up">
             <div v-if="showAddParticipant" class="card p-4 mb-3 space-y-3">
-              <div>
-                <label class="input-label">{{ t('search_or_uuid') }}</label>
-                <input v-model="addSearch" type="text" class="input py-2 text-sm"/>
-              </div>
-              <div v-if="filteredUsers.length" class="space-y-1 max-h-40 overflow-y-auto">
-                <button v-for="u in filteredUsers" :key="u.uuid || u.id"
-                        @click="toggleSelectUser(u.uuid || u.id)"
-                        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all"
-                        :style="selectedUserIds.includes(u.uuid || u.id)
-                    ? 'background: rgba(var(--brand-rgb), 0.08); border: 1px solid rgba(var(--brand-rgb), 0.2); color: var(--brand)'
-                    : 'background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid transparent'"
+              <div class="flex gap-1 p-1 rounded-xl mb-6 overflow-x-auto animate-slide-up flex-wrap"
+                   style="background: var(--bg-subtle); animation-delay: 0.05s">
+                <button v-for="tab in availableParticipantTabs" :key="tab.id"
+                        @click="activeParticipantTab = tab.id"
+                        class="flex-1 min-w-fit py-2 px-3 rounded-lg text-sm font-display font-medium transition-all whitespace-nowrap"
+                        :style="activeParticipantTab === tab.id
+            ? 'background: var(--surface); color: var(--text-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.08)'
+            : 'color: var(--text-muted)'"
                 >
-                  <div class="w-6 h-6 rounded font-bold text-xs flex items-center justify-center shrink-0"
-                       style="background: var(--border); color: var(--text-muted)">
-                    {{ u.visible_name?.[0]?.toUpperCase() }}
-                  </div>
-                  {{ u.visible_name }}
-                  <span class="ml-auto text-xs" style="color: var(--text-faint)">{{ u.username }}</span>
+                  {{ tab.label }}
                 </button>
               </div>
-              <div class="flex gap-2">
-                <button @click="handleAddParticipants" class="btn-primary btn-sm flex-1 text-xs">{{
-                    t('add_selected')
-                  }}
-                </button>
-                <button @click="showAddParticipant = false" class="btn-secondary btn-sm px-3 text-xs">{{
-                    t('cancel')
-                  }}
-                </button>
+
+              <div v-if="activeParticipantTab === 'add_managed'" key="add_managed" class="space-y-3 animate-slide-up">
+                <p>{{t('managed_participant_description')}}</p>
+
+                <div>
+                  <label class="input-label">{{ t('managed_participant_name') }}</label>
+                  <input v-model="newParticipantName" @keyup.enter="handleCreateParticipant" type="text" class="input py-2 text-sm"/>
+                </div>
+
+                <div class="flex gap-2">
+                  <button @click="handleCreateParticipant" class="btn-primary btn-sm flex-1 text-xs">{{
+                      t('create')
+                    }}
+                  </button>
+                  <button @click="showAddParticipant = false" class="btn-secondary btn-sm px-3 text-xs">{{
+                      t('cancel')
+                    }}
+                  </button>
+                </div>
+              </div>
+
+
+              <div v-if="activeParticipantTab ===  'add_by_id'" key="add_by_id" class="space-y-3 animate-slide-up">
+                <div>
+                  <label class="input-label">{{ t('search_or_uuid') }}</label>
+                  <input v-model="addSearch" type="text" class="input py-2 text-sm"/>
+                </div>
+                <div v-if="filteredUsers.length" class="space-y-1 max-h-40 overflow-y-auto">
+                  <button v-for="u in filteredUsers" :key="u.uuid || u.id"
+                          @click="toggleSelectUser(u.uuid || u.id)"
+                          class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all"
+                          :style="selectedUserIds.includes(u.uuid || u.id)
+                      ? 'background: rgba(var(--brand-rgb), 0.08); border: 1px solid rgba(var(--brand-rgb), 0.2); color: var(--brand)'
+                      : 'background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid transparent'"
+                  >
+                    <div class="w-6 h-6 rounded font-bold text-xs flex items-center justify-center shrink-0"
+                         style="background: var(--border); color: var(--text-muted)">
+                      {{ u.visible_name?.[0]?.toUpperCase() }}
+                    </div>
+                    {{ u.visible_name }}
+                    <span class="ml-auto text-xs" style="color: var(--text-faint)">{{ u.username }}</span>
+                  </button>
+                </div>
+                <div class="flex gap-2">
+                  <button @click="handleAddParticipants" class="btn-primary btn-sm flex-1 text-xs">{{
+                      t('add_selected')
+                    }}
+                  </button>
+                  <button @click="showAddParticipant = false" class="btn-secondary btn-sm px-3 text-xs">{{
+                      t('cancel')
+                    }}
+                  </button>
+                </div>
               </div>
             </div>
           </Transition>
@@ -191,7 +227,7 @@
             <div v-if="showEncounterForm" class="card p-4 mb-3 space-y-3">
               <div class="flex gap-1 p-1 rounded-xl mb-6 overflow-x-auto animate-slide-up flex-wrap"
                    style="background: var(--bg-subtle); animation-delay: 0.05s">
-                <button v-for="tab in availableTabs" :key="tab.id"
+                <button v-for="tab in availableEncounterTabs" :key="tab.id"
                         @click="activeEncounterTab = tab.id"
                         class="flex-1 min-w-fit py-2 px-3 rounded-lg text-sm font-display font-medium transition-all whitespace-nowrap"
                         :style="activeEncounterTab === tab.id
@@ -332,6 +368,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import {useI18n} from '@/i18n/index.js'
 import EncounterRow from '@/components/EncounterRow.vue'
 import QRCode from 'qrcode'
+import {authApi} from "../api/index.js";
 
 const route = useRoute()
 const router = useRouter()
@@ -351,6 +388,10 @@ const selectedUserIds = ref([])
 const qrCanvas = ref(null)
 const newEncounter = ref({partyA: '', partyB: '', round: 'R1'})
 const activeEncounterTab = ref('generate')
+
+const newParticipantName = ref('')
+const activeParticipantTab = ref('add_managed')
+
 const groups = ref([])
 const encounterSearch = ref('')
 
@@ -389,16 +430,24 @@ const filteredEncounters = computed(() => {
 
   if (!terms.length) return store.encounters
   return store.encounters.filter(e => terms.every(t =>
-          getParticipantName(e.partyA).includes(t) ||
-          getParticipantName(e.partyB).includes(t) ||
+          getParticipantName(e.partyA)?.includes(t) ||
+          getParticipantName(e.partyB)?.includes(t) ||
           e.round.toLowerCase().includes(t)
   ))
 })
 
-const availableTabs = computed(() => {
+const availableEncounterTabs = computed(() => {
   const tabs = [
     {id: 'generate', label: t('create_encounter_generate')},
     {id: 'manual', label: t('create_encounter_manual')},
+  ]
+  return tabs
+})
+
+const availableParticipantTabs = computed(() => {
+  const tabs = [
+    {id: 'add_managed', label: t('create_managed_participant')},
+    // {id: 'add_by_id', label: t('add_participant_by_id')},
   ]
   return tabs
 })
@@ -443,19 +492,35 @@ async function changeState(state) {
   }
 }
 
+async function handleCreateParticipant() {
+  if (!newParticipantName.value) return
+
+  try {
+    const data = await store.createUser({visible_name: newParticipantName.value})
+    await store.addParticipants(tournamentId, data)
+    toast.add({severity: 'success', summary: t('added'), life: 2000})
+    newParticipantName.value = ''
+  } catch (e) {
+    toast.add({severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000})
+  }
+}
+
 async function handleAddParticipants() {
   const ids = selectedUserIds.value.length
       ? selectedUserIds.value
       : addSearch.value ? [addSearch.value] : []
   if (!ids.length) return
-  try {
-    await store.addParticipants(tournamentId, ids)
-    toast.add({severity: 'success', summary: t('added'), life: 2000})
-    showAddParticipant.value = false
-    selectedUserIds.value = []
-    addSearch.value = ''
-  } catch (e) {
-    toast.add({severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000})
+
+  for (const id of ids) {
+    try {
+        await store.addParticipants(tournamentId, {id: id})
+        toast.add({severity: 'success', summary: t('added') + ": " + getParticipantName(id), life: 2000})
+        showAddParticipant.value = false
+        selectedUserIds.value = []
+        addSearch.value = ''
+      } catch (e) {
+        toast.add({severity: 'error', summary: t('error') + ": " + getParticipantName(id), detail: e.response?.data?.message || '', life: 3000})
+      }
   }
 }
 

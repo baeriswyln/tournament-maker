@@ -143,6 +143,12 @@ func (u *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// a request without login will create a user that has no access.
+
+		if userRequest.VisibleName == "" {
+			writeError(w, http.StatusBadRequest, "name required")
+			return
+		}
+
 		user = &models.User{
 			VisibleName: &userRequest.VisibleName,
 			OwnerID:     &requesterID,

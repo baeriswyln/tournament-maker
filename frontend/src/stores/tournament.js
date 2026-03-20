@@ -36,6 +36,7 @@ export const useTournamentStore = defineStore('tournament', () => {
 
   async function fetchParticipants(tid) {
     const { data } = await participantsApi.list(tid)
+    data.sort((a, b) => a.visible_name.toLocaleLowerCase().localeCompare(b.visible_name.toLocaleLowerCase()))
     participants.value = data
     return data
   }
@@ -52,6 +53,11 @@ export const useTournamentStore = defineStore('tournament', () => {
       const { data } = await usersApi.list()
       users.value = data
     } catch {}
+  }
+
+  async function createUser(payload) {
+    const {data}  = await usersApi.create(payload)
+    return data
   }
 
   async function createTournament(payload) {
@@ -103,6 +109,7 @@ export const useTournamentStore = defineStore('tournament', () => {
     owning, participating, current, participants, encounters, myEncounters, users, loading,
     fetchAll, fetchOne, fetchParticipants, fetchEncounters, fetchUsers,
     createTournament, updateTournament, deleteTournament, resetTournament,
-    addParticipants, removeParticipant, createEncounters, updateScore, deleteScore
+    addParticipants, removeParticipant, createEncounters, updateScore, deleteScore,
+    createUser,
   }
 })
