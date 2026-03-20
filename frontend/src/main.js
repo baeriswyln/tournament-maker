@@ -6,11 +6,12 @@ import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
 import ConfirmationService from 'primevue/confirmationservice'
-import Aura from '@primevue/themes/aura'
-import 'primeicons/primeicons.css'
+import Aura from '@primeuix/themes/aura';
 
 import router from './router'
 import App from './App.vue'
+
+import 'primeicons/primeicons.css'
 import './assets/main.css'
 
 const app = createApp(App)
@@ -22,7 +23,10 @@ app.use(PrimeVue, {
     preset: Aura,
     options: {
       darkModeSelector: 'html.dark',
-      cssLayer: false
+      cssLayer: {
+        name: 'primevue',
+        order: 'base primevue, theme, components, utilities'
+      }
     }
   }
 })

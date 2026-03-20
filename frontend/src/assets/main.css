@@ -1,6 +1,30 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+
+@layer base, primevue, theme, components, utilities;
+
+/* ─── THEME (replaces tailwind.config.js) ──────────────── */
+@theme {
+  /* Fonts */
+  --font-display: "Syne", sans-serif;
+  --font-body:    "DM Sans", sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+  /* Brand colors */
+  --color-brand:       #0EA5A0;
+  --color-brand-light: #14C4BF;
+  --color-brand-dark:  #0B8580;
+  --color-jade:        #10B981;
+  --color-danger:      #EF4444;
+
+  /* Animations */
+  --animate-fade-in:    fadeIn 0.35s ease both;
+  --animate-slide-up:   slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pulse-brand: pulse-brand 2s ease-in-out infinite;
+}
+
+/* ─── DARK MODE VARIANT ─────────────────────────────────── */
+@variant dark (&:where(html.dark, html.dark *));
 
 /* ─── CSS CUSTOM PROPERTIES ───────────────────────────── */
 :root {
@@ -75,6 +99,20 @@ html.dark {
   }
 }
 
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  outline: none;
+}
+
 /* ─── COMPONENTS ────────────────────────────────────────── */
 @layer components {
   /* Cards */
@@ -91,21 +129,6 @@ html.dark {
   }
   html.dark .card-elevated {
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
-    border-radius: 0.75rem;
-    cursor: pointer;
-    user-select: none;
-    border: none;
-    outline: none;
   }
 
   .btn-primary, button.p-button {
