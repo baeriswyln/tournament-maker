@@ -1,7 +1,7 @@
 export default {
   // General
   app_name: 'Tournament Maker',
-  tagline: 'Organize. Compete. Win.',
+  version: 'Version v{version} - {date}',
   save: 'Save',
   cancel: 'Cancel',
   delete: 'Delete',

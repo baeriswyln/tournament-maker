@@ -41,7 +41,22 @@ export function useI18n() {
 
   const locale = computed(() => currentLocale.value)
 
-  return { t, setLocale, locale, availableLocales }
+  const dateFormats = {
+    short: { dateStyle: 'short' },
+    medium: { dateStyle: 'medium' },
+    long: { dateStyle: 'long' },
+    full: { dateStyle: 'full' },
+    datetime: { dateStyle: 'medium', timeStyle: 'short' },
+  }
+
+  function d(date, style = 'short') {
+    try {
+      const options = dateFormats[style] ?? { dateStyle: style }
+      return new Intl.DateTimeFormat(currentLocale.value, options).format(date instanceof Date ? date : new Date(date))
+    } catch { return '' }
+  }
+
+  return { t, d, setLocale, locale, availableLocales }
 }
 
 // Set initial lang attr

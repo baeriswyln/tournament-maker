@@ -53,14 +53,13 @@
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from '@/i18n/index.js'
-import { format } from 'date-fns'
 
 const props = defineProps({
   tournament: { type: Object, required: true },
   owned: { type: Boolean, default: false }
 })
 
-const { t } = useI18n()
+const { t, d } = useI18n()
 const hovered = ref(false)
 
 const hoverStyle = computed(() =>
@@ -79,7 +78,7 @@ const badgeClass = computed(() => {
   return `badge ${map[props.tournament.state] || 'badge-draft'}`
 })
 
-function formatDate(d) {
-  try { return format(new Date(d), 'MMM d, yyyy') } catch { return '' }
+function formatDate(date) {
+  return d(date, 'medium')
 }
 </script>
