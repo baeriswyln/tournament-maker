@@ -116,13 +116,6 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium truncate" style="color: var(--text-primary)">{{ p.visible_name }}</p>
-                <p class="text-xs" style="color: var(--text-muted)">
-                  {{ p.encounters?.finished || 0 }} / {{ p.encounters?.total || 0 }} {{ t('played').toLowerCase() }}
-                </p>
-              </div>
-              <div class="text-right">
-                <p class="font-display font-bold" style="color: var(--text-primary)">{{ p.encounters?.score || 0 }}</p>
-                <p class="text-xs" style="color: var(--text-muted)">{{ t('pts') }}</p>
               </div>
             </div>
           </div>
