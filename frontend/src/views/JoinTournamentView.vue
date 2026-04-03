@@ -4,7 +4,9 @@
     <div class="card overflow-hidden mb-4 animate-slide-up" style="animation-delay: 0.05s">
 
       <!-- Viewfinder -->
-      <div class="relative aspect-square w-full" style="background: #000">
+      <div class="relative w-full transition-all duration-300"
+           :class="result ? 'h-28' : 'aspect-square'"
+           style="background: #000">
         <video
             ref="videoEl"
             class="w-full h-full object-cover"
@@ -287,20 +289,12 @@ function handleDetected(raw) {
 
 function onManualInput() {
   // Also run extraction when user pastes a full URL
-  id.value = extractId(id.value)
-}
-
-// ── Navigation ────────────────────────────────────────────
-function confirm() {
-  if (!id.value) return
-  stopCamera()
-  // Navigate to the tournament — uses the extracted UUID
-  router.push(`/tournaments/${id.value}`)
+  form.value.id = extractId(form.value.id)
 }
 
 function reset() {
   result.value = ''
-  id.value = ''
+  form.value.id = ''
   errorMsg.value = ''
   startCamera()
 }
