@@ -173,7 +173,10 @@ async function handleRegister() {
     if (registerForm.value.username) payload.username = registerForm.value.username
     if (registerForm.value.password) payload.password = registerForm.value.password
     await auth.register(payload)
-    toast.add({ severity: 'success', summary: t('success'), detail: t('tournament_created'), life: 3000 })
+    if (registerForm.value.username && registerForm.value.password && !auth.isAuthenticated) {
+      await auth.login(registerForm.value.username, registerForm.value.password)
+    }
+    toast.add({ severity: 'success', summary: t('success'), detail: t('register'), life: 3000 })
     router.push('/')
   } catch {
     registerError.value = t('register_error')
