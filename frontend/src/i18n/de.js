@@ -45,6 +45,8 @@ export default {
   guest_account_note: 'Ohne Benutzername können Sie trotzdem an Turnieren teilnehmen, zu denen Sie eingeladen werden.',
   optional_for_organizers: 'Optional — zum Verwalten von Turnieren',
   sign_out: 'Abmelden',
+  session_expired_title: 'Sitzung abgelaufen',
+  session_expired_detail: 'Sie wurden abgemeldet. Bitte erneut anmelden.',
 
   // Dashboard
   dashboard_greeting: 'Hallo, {name} 👋',

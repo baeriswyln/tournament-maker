@@ -45,6 +45,8 @@ export default {
   guest_account_note: "Sans identifiants, vous pouvez quand même participer aux tournois auxquels vous êtes invité.",
   optional_for_organizers: 'Optionnel — pour gérer des tournois',
   sign_out: 'Se déconnecter',
+  session_expired_title: 'Session expirée',
+  session_expired_detail: 'Vous avez été déconnecté. Veuillez vous reconnecter.',
 
   // Dashboard
   dashboard_greeting: 'Salut, {name} 👋',

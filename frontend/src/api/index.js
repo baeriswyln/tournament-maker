@@ -7,31 +7,66 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-// Attach token
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('access_token')
+// Decode JWT exp claim (seconds since epoch), returns null if unreadable
+function tokenExp(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1])).exp ?? null
+  } catch {
+    return null
+  }
+}
+
+// True when the token expires within the next 30 seconds
+function expiringSoon(token) {
+  const exp = tokenExp(token)
+  return exp !== null && exp - Date.now() / 1000 < 30
+}
+
+// Singleton promise so concurrent requests share one refresh call
+let refreshPromise = null
+
+async function proactiveRefresh() {
+  const refresh = localStorage.getItem('refresh_token')
+  if (!refresh) return null
+  if (!refreshPromise) {
+    refreshPromise = axios.put(`${BASE_URL}/auth`, { refresh_token: refresh })
+      .then(({ data }) => {
+        localStorage.setItem('access_token', data.access_token)
+        if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
+        return data.access_token
+      })
+      .catch(() => {
+        localStorage.clear()
+        window.dispatchEvent(new CustomEvent('session-expired'))
+        window.location.href = '/login'
+        return null
+      })
+      .finally(() => { refreshPromise = null })
+  }
+  return refreshPromise
+}
+
+// Attach token — refresh proactively if expiring soon
+api.interceptors.request.use(async config => {
+  let token = localStorage.getItem('access_token')
+  if (token && expiringSoon(token)) {
+    token = await proactiveRefresh() ?? token
+  }
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// Auto-refresh on 401
+// Reactive refresh on 401 (fallback for clock skew / edge cases)
 api.interceptors.response.use(
   r => r,
   async error => {
     const original = error.config
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true
-      const refresh = localStorage.getItem('refresh_token')
-      if (refresh) {
-        try {
-          const { data } = await axios.put(`${BASE_URL}/auth`, { refresh_token: refresh })
-          localStorage.setItem('access_token', data.access_token)
-          original.headers.Authorization = `Bearer ${data.access_token}`
-          return api(original)
-        } catch {
-          localStorage.clear()
-          window.location.href = '/login'
-        }
+      const newToken = await proactiveRefresh()
+      if (newToken) {
+        original.headers.Authorization = `Bearer ${newToken}`
+        return api(original)
       }
     }
     return Promise.reject(error)

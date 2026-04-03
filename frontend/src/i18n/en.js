@@ -45,6 +45,8 @@ export default {
   guest_account_note: 'Without username/password, you can still participate in tournaments you\'re invited to.',
   optional_for_organizers: 'Optional — for managing tournaments',
   sign_out: 'Sign Out',
+  session_expired_title: 'Session expired',
+  session_expired_detail: 'You have been signed out. Please sign in again.',
 
   // Dashboard
   dashboard_greeting: 'Hey, {name} 👋',
