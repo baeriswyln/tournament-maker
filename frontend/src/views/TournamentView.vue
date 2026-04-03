@@ -137,12 +137,14 @@ import Scoreboard from '@/components/Scoreboard.vue'
 import { format } from 'date-fns'
 import {useToast} from "primevue/usetoast";
 import router from "../router/index.js";
+import { useApiError } from '@/composables/useApiError.js'
 
 const route = useRoute()
 const auth = useAuthStore()
 const toast = useToast()
 const store = useTournamentStore()
 const { t } = useI18n()
+const { resolveApiError } = useApiError()
 const tournamentId = route.params.id
 const activeTab = ref('upcoming')
 const loading = ref(true)
@@ -223,7 +225,8 @@ onMounted(async () => {
       store.fetchScoreboard(tournamentId),
     ])
   } catch (e) {
-    toast.add({ severity: 'error', summary: t('forbidden'),  life: 2000 })
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
     router.push('/')
   }
   loading.value = false

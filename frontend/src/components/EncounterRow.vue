@@ -113,7 +113,8 @@ import { ref, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { encountersApi } from '@/api'
 import { useI18n } from '@/i18n/index.js'
-import {useConfirm} from "primevue/useconfirm";
+import { useConfirm } from 'primevue/useconfirm'
+import { useApiError } from '@/composables/useApiError.js'
 
 const props = defineProps({
   encounter: { type: Object, required: true },
@@ -126,6 +127,7 @@ const emit = defineEmits(['score-changed'])
 const toast = useToast()
 const { t } = useI18n()
 const confirm = useConfirm()
+const { resolveApiError } = useApiError()
 
 const showScoreForm = ref(false)
 const submitting = ref(false)
@@ -182,7 +184,8 @@ async function submitScore() {
     showScoreForm.value = false
     emit('score-changed')
   } catch (e) {
-    toast.add({ severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000 })
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   } finally {
     submitting.value = false
   }
@@ -210,7 +213,8 @@ async function resetScore() {
     showScoreForm.value = false
     emit('score-changed')
   } catch (e) {
-    toast.add({ severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000 })
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   } finally {
     submitting.value = false
   }
@@ -239,7 +243,8 @@ async function deleteEncounter() {
     showScoreForm.value = false
     emit('score-changed')
   } catch (e) {
-    toast.add({ severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000 })
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   } finally {
     submitting.value = false
   }

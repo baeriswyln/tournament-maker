@@ -113,11 +113,13 @@ import { useAuthStore } from '@/stores/auth'
 import { usersApi } from '@/api'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '@/i18n/index.js'
+import { useApiError } from '@/composables/useApiError.js'
 
 const auth = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
+const { resolveApiError } = useApiError()
 
 const saving = ref(false)
 const saveError = ref('')
@@ -149,7 +151,8 @@ async function handleSave() {
     form.value = { visible_name: '', password: '' }
     toast.add({ severity: 'success', summary: t('profile_updated'), life: 2000 })
   } catch (e) {
-    saveError.value = e.response?.data?.message || t('error')
+    const { title, detail } = resolveApiError(e)
+    saveError.value = detail || title
   } finally {
     saving.value = false
   }
@@ -169,7 +172,8 @@ async function handleUpgrade() {
     showUpgrade.value = false
     toast.add({ severity: 'success', summary: t('upgrade_success'), life: 2000 })
   } catch (e) {
-    toast.add({ severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000 })
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   } finally {
     saving.value = false
   }

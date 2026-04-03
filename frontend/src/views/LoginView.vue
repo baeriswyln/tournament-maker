@@ -127,12 +127,14 @@ import { useToast } from 'primevue/usetoast'
 import { useI18n } from '@/i18n/index.js'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import { useApiError } from '@/composables/useApiError.js'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const toast = useToast()
 const { t } = useI18n()
+const { resolveApiError } = useApiError()
 
 const tabs = computed(() => [
   { id: 'login', label: t('sign_in') },
@@ -154,9 +156,9 @@ async function handleLogin() {
   try {
     await auth.login(loginForm.value.username, loginForm.value.password)
     router.push(route.query.redirect || '/')
-  } catch (e){
-    console.error(e)
-    loginError.value = t('login_error')
+  } catch (e) {
+    const { title, detail } = resolveApiError(e)
+    loginError.value = detail || title
   } finally {
     loading.value = false
   }
@@ -178,8 +180,9 @@ async function handleRegister() {
     }
     toast.add({ severity: 'success', summary: t('success'), detail: t('register'), life: 3000 })
     router.push('/')
-  } catch {
-    registerError.value = t('register_error')
+  } catch (e) {
+    const { title, detail } = resolveApiError(e)
+    registerError.value = detail || title
   } finally {
     loading.value = false
   }

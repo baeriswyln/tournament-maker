@@ -369,6 +369,7 @@ import {useI18n} from '@/i18n/index.js'
 import EncounterRow from '@/components/EncounterRow.vue'
 import QRCode from 'qrcode'
 import {authApi} from "../api/index.js";
+import { useApiError } from '@/composables/useApiError.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -377,6 +378,7 @@ const toast = useToast()
 const confirm = useConfirm()
 const {t} = useI18n()
 
+const { resolveApiError } = useApiError()
 const tournamentId = route.params.id
 const loading = ref(true)
 const stateLoading = ref(false)
@@ -501,7 +503,8 @@ async function handleCreateParticipant() {
     toast.add({severity: 'success', summary: t('added'), life: 2000})
     newParticipantName.value = ''
   } catch (e) {
-    toast.add({severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000})
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   }
 }
 
@@ -591,7 +594,8 @@ async function generateGroupEncounters() {
     await store.createEncounters(tournamentId, encounters)
     toast.add({severity: 'success', summary: t('encounter_added'), life: 2000})
   } catch (e) {
-    toast.add({severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000})
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   }
 }
 
@@ -603,7 +607,8 @@ async function handleAddEncounter() {
     newEncounter.value = {partyA: '', partyB: '', round: 'R1'}
     showEncounterForm.value = false
   } catch (e) {
-    toast.add({severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000})
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   }
 }
 
@@ -642,7 +647,8 @@ onMounted(async () => {
       store.fetchUsers()
     ])
   } catch (e) {
-    toast.add({severity: 'error', summary: t('forbidden'), life: 2000})
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
     router.push('/')
   }
   loading.value = false
