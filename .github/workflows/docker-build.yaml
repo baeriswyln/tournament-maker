@@ -41,3 +41,19 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/tournament-maker-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/tournament-maker-frontend:${{ github.sha }}
+
+  restart:
+    name: Restart deployments
+    runs-on: self-hosted
+    needs: build-and-push
+    steps:
+      - name: Restart API
+        uses: steebchen/kubectl@v2.0.0
+        with:
+          config: ${{ secrets.KUBE_CONFIG }}
+          command: -n apps rollout restart deploy tournament-maker-api
+      - name: Restart frontend
+        uses: steebchen/kubectl@v2.0.0
+        with:
+          config: ${{ secrets.KUBE_CONFIG }}
+          command: -n apps rollout restart deploy tournament-maker-frontend

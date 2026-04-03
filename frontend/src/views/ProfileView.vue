@@ -99,10 +99,24 @@
     <!-- Sign out -->
     <button @click="handleLogout"
       class="w-full btn-secondary flex items-center justify-center gap-2 animate-slide-up"
-      style="animation-delay: 0.25s; color: var(--danger); border-color: rgba(239,68,68,0.2)">
+      style="animation-delay: 0.2s; color: var(--danger); border-color: rgba(239,68,68,0.2)">
       <i class="pi pi-sign-out" />
       {{ t('sign_out') }}
     </button>
+
+    <!-- About -->
+    <div class="mt-10 text-center animate-slide-up" style="animation-delay: 0.25s">
+      <div class="space-y-1.5">
+        <p class="text-xs" style="color: var(--text-faint)">
+          {{ t('version_label') }} · {{ t('version', {version, date: d(buildDate, 'datetime')}) }}
+        </p>
+        <p class="text-xs" style="color: var(--text-faint)">
+          {{ t('built_with') }} Vue 3 · Vite · PrimeVue
+        </p>
+        <p class="text-xs mt-6" style="color: var(--text-faint)">© {{ new Date().getFullYear() }} - Made with ☕ by <a href="https://baeriswyl.dev" target="_blank"
+            style="color: var(--brand); text-decoration: underline; text-underline-offset: 2px;">baeriswyl.dev</a></p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -118,8 +132,11 @@ import { useApiError } from '@/composables/useApiError.js'
 const auth = useAuthStore()
 const router = useRouter()
 const toast = useToast()
-const { t } = useI18n()
+const { t, d } = useI18n()
 const { resolveApiError } = useApiError()
+
+const version = __APP_VERSION__
+const buildDate = new Date(__BUILD_DATE__)
 
 const saving = ref(false)
 const saveError = ref('')

@@ -134,7 +134,6 @@ import { useTournamentStore } from '@/stores/tournament'
 import { useI18n } from '@/i18n/index.js'
 import EncounterRow from '@/components/EncounterRow.vue'
 import Scoreboard from '@/components/Scoreboard.vue'
-import { format } from 'date-fns'
 import {useToast} from "primevue/usetoast";
 import router from "../router/index.js";
 import { useApiError } from '@/composables/useApiError.js'
@@ -143,7 +142,7 @@ const route = useRoute()
 const auth = useAuthStore()
 const toast = useToast()
 const store = useTournamentStore()
-const { t } = useI18n()
+const { t, d } = useI18n()
 const { resolveApiError } = useApiError()
 const tournamentId = route.params.id
 const activeTab = ref('upcoming')
@@ -203,8 +202,8 @@ const filteredPastEncounters = computed(() => {
   ))
 })
 
-function formatDate(d) {
-  try { return format(new Date(d), 'MMMM d, yyyy') } catch { return '' }
+function formatDate(date) {
+  return d(date, 'long')
 }
 
 async function refreshEncounters() {

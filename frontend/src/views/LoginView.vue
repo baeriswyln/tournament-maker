@@ -25,7 +25,7 @@
           </svg>
         </div>
         <h1 class="font-display text-3xl font-bold" style="color: var(--text-primary)">{{ t('app_name') }}</h1>
-        <p class="text-sm mt-1" style="color: var(--text-muted)">{{ t('tagline') }}</p>
+        <p class="text-sm mt-1" style="color: var(--text-muted)">{{ t('version_label')}} {{ t('version', {version, date: d(buildDate, 'datetime')}) }}</p>
       </div>
 
       <!-- Tab switcher -->
@@ -133,8 +133,11 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const toast = useToast()
-const { t } = useI18n()
+const { t, d } = useI18n()
 const { resolveApiError } = useApiError()
+
+const version = __APP_VERSION__
+const buildDate = new Date(__BUILD_DATE__)
 
 const tabs = computed(() => [
   { id: 'login', label: t('sign_in') },
