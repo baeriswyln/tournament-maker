@@ -1,13 +1,13 @@
 <template>
   <div class="card overflow-hidden">
     <!-- Header -->
-    <div class="grid grid-cols-12 px-4 py-2.5"
+    <div class="grid grid-cols-14 sm:grid-cols-10 px-2 py-2.5"
       style="border-bottom: 1px solid var(--border); background: var(--bg-subtle);">
-      <div class="col-span-1 text-center input-label normal-case tracking-normal" style="font-size: 0.7rem; margin-bottom: 0">#</div>
-      <div class="col-span-5 lg:col-span-6 input-label normal-case tracking-normal" style="font-size: 0.7rem; margin-bottom: 0">{{ t('players') }}</div>
+      <div class="col-span-2 sm:col-span-1 text-center input-label normal-case tracking-normal" style="font-size: 0.7rem; margin-bottom: 0">#</div>
+      <div class="col-span-8 sm:col-span-5 input-label normal-case tracking-normal" style="font-size: 0.7rem; margin-bottom: 0">{{ t('players') }}</div>
       <div class="col-span-2 text-center input-label normal-case tracking-normal hidden sm:block" style="font-size: 0.7rem; margin-bottom: 0">W/D/L</div>
-      <div class="col-span-2 text-center input-label normal-case tracking-normal hidden sm:block" style="font-size: 0.7rem; margin-bottom: 0">+/-</div>
-      <div class="col-span-4 sm:col-span-2 text-center input-label normal-case tracking-normal font-bold" style="font-size: 0.7rem; margin-bottom: 0">{{ t('pts') }}</div>
+      <div class="col-span-2 sm:col-span-1 text-center input-label normal-case tracking-normal" style="font-size: 0.7rem; margin-bottom: 0">+/-</div>
+      <div class="col-span-2 sm:col-span-1 text-center input-label normal-case tracking-normal font-bold" style="font-size: 0.7rem; margin-bottom: 0">{{ t('pts') }}</div>
     </div>
 
     <!-- Empty state -->
@@ -21,7 +21,7 @@
 
       <!-- Stats row -->
       <div
-        class="grid grid-cols-12 px-4 py-3 items-center cursor-pointer transition-colors select-none"
+        class="grid grid-cols-14 sm:grid-cols-10 px-2 py-3 items-center cursor-pointer transition-colors select-none"
         :style="{
           borderTop: i > 0 ? '1px solid var(--border)' : 'none',
           background: selectedId === p.id
@@ -31,7 +31,7 @@
         @click="toggleParticipant(p.id)"
       >
         <!-- Rank -->
-        <div class="col-span-1 flex justify-center">
+        <div class="col-span-2 sm:col-span-1 flex justify-center">
           <span v-if="i === 0" class="text-lg">🥇</span>
           <span v-else-if="i === 1" class="text-lg">🥈</span>
           <span v-else-if="i === 2" class="text-lg">🥉</span>
@@ -39,7 +39,7 @@
         </div>
 
         <!-- Name -->
-        <div class="col-span-5 lg:col-span-6 flex items-center gap-2 min-w-0">
+        <div class="col-span-8 sm:col-span-5 flex items-center gap-2 min-w-0">
           <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-display font-bold shrink-0"
             :style="selectedId === p.id
               ? 'background: rgba(var(--brand-rgb), 0.2); color: var(--brand)'
@@ -68,13 +68,13 @@
         </div>
 
         <!-- Score diff -->
-        <div class="col-span-2 text-center text-sm hidden sm:block"
+        <div class="col-span-2 sm:col-span-1 text-center text-sm"
           :style="{ color: p.score_diff > 0 ? 'var(--success-muted, #4ade80)' : p.score_diff < 0 ? 'var(--danger-muted, #f87171)' : 'var(--text-muted)' }">
           {{ p.score_diff > 0 ? '+' : '' }}{{ p.score_diff }}
         </div>
 
         <!-- Points -->
-        <div class="col-span-4 sm:col-span-2 text-center">
+        <div class="col-span-2 sm:col-span-1 text-center">
           <span class="font-display font-bold text-base"
             :style="{ color: i === 0 ? 'var(--brand)' : 'var(--text-primary)' }">
             {{ p.points }}
