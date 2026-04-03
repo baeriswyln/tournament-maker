@@ -71,6 +71,8 @@ func NewRouter(
 						r.Delete("/", hPart.DeleteParticipant)
 					})
 					
+					r.Get("/scoreboard", hTour.GetScoreboard)
+
 					r.Route("/encounters", func(r chi.Router) {
 						r.Get("/", hEnc.GetEncounters)
 						r.Post("/", hEnc.CreateEncounters)

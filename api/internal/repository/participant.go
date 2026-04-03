@@ -31,6 +31,57 @@ func (r *ParticipantRepository) Remove(tournamentID, userID uuid.UUID) error {
 		"tournament_id = ? AND user_id = ?", tournamentID, userID).Error
 }
 
+func (r *ParticipantRepository) ListScoreboard(tournamentID uuid.UUID) ([]models.ScoreboardEntry, error) {
+	var participants []models.TournamentParticipant
+	if err := r.db.Preload("User").
+		Where("tournament_id = ?", tournamentID).
+		Find(&participants).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]models.ScoreboardEntry, 0, len(participants))
+	for _, p := range participants {
+		var encounters []models.Encounter
+		r.db.Where("tournament_id = ? AND (party_a = ? OR party_b = ?) AND state = ?",
+			tournamentID, p.UserID, p.UserID, models.EncounterStateFinal).
+			Find(&encounters)
+
+		var won, draw, lost, scoreDiff int
+		for _, e := range encounters {
+			if e.ScoreA == nil || e.ScoreB == nil {
+				continue
+			}
+			var own, opp int
+			if e.PartyA == p.UserID {
+				own, opp = *e.ScoreA, *e.ScoreB
+			} else {
+				own, opp = *e.ScoreB, *e.ScoreA
+			}
+			scoreDiff += own - opp
+			switch {
+			case own > opp:
+				won++
+			case own == opp:
+				draw++
+			default:
+				lost++
+			}
+		}
+
+		result = append(result, models.ScoreboardEntry{
+			ID:          p.UserID,
+			VisibleName: p.User.VisibleName,
+			Played:      won + draw + lost,
+			Won:         won,
+			Draw:        draw,
+			Lost:        lost,
+			ScoreDiff:   scoreDiff,
+			Points:      won*3 + draw,
+		})
+	}
+	return result, nil
+}
+
 func (r *ParticipantRepository) ListWithStats(tournamentID uuid.UUID) ([]models.ParticipantResponse, error) {
 	var participants []models.TournamentParticipant
 	if err := r.db.Preload("User").

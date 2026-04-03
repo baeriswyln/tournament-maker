@@ -101,7 +101,7 @@
 
         <!-- Scoreboard -->
         <div v-else-if="activeTab === 'scoreboard'" key="scoreboard" class="animate-slide-up">
-          <Scoreboard :participants="store.participants" />
+          <Scoreboard :entries="store.scoreboard" />
         </div>
 
         <!-- Players -->
@@ -215,7 +215,8 @@ function formatDate(d) {
 async function refreshEncounters() {
   await Promise.all([
     store.fetchEncounters(tournamentId, auth.user?.id),
-    store.fetchParticipants(tournamentId)
+    store.fetchParticipants(tournamentId),
+    store.fetchScoreboard(tournamentId),
   ])
 }
 
@@ -225,7 +226,8 @@ onMounted(async () => {
     await Promise.all([
       store.fetchOne(tournamentId),
       store.fetchParticipants(tournamentId),
-      store.fetchEncounters(tournamentId, auth.user?.id)
+      store.fetchEncounters(tournamentId, auth.user?.id),
+      store.fetchScoreboard(tournamentId),
     ])
   } catch (e) {
     toast.add({ severity: 'error', summary: t('forbidden'),  life: 2000 })

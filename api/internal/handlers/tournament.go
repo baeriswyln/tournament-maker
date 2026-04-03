@@ -7,6 +7,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"sort"
 
 	"baeriswyl.dev/tournament-maker/internal/middleware"
 	"baeriswyl.dev/tournament-maker/internal/models"
@@ -17,11 +18,12 @@ import (
 )
 
 type TournamentHandler struct {
-	tournaments *repository.TournamentRepository
+	tournaments  *repository.TournamentRepository
+	participants *repository.ParticipantRepository
 }
 
-func NewTournamentHandler(t *repository.TournamentRepository) *TournamentHandler {
-	return &TournamentHandler{tournaments: t}
+func NewTournamentHandler(t *repository.TournamentRepository, p *repository.ParticipantRepository) *TournamentHandler {
+	return &TournamentHandler{tournaments: t, participants: p}
 }
 
 func (t *TournamentHandler) GetTournaments(w http.ResponseWriter, r *http.Request) {
@@ -228,4 +230,52 @@ func (t *TournamentHandler) ResetTournament(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (t *TournamentHandler) GetScoreboard(w http.ResponseWriter, r *http.Request) {
+	requesterID, ok := middleware.GetIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+	tournamentId, err := uuid.Parse(id)
+	if id == "" || err != nil {
+		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		return
+	}
+
+	tournament, err := t.tournaments.GetByID(tournamentId)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	isOwner := t.tournaments.IsOwner(tournamentId, requesterID)
+	isRelated := t.tournaments.IsRelated(tournamentId, requesterID)
+
+	if !isOwner && (!isRelated || !tournament.Visibility.Scoreboard) {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	entries, err := t.participants.ListScoreboard(tournamentId)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Points != entries[j].Points {
+			return entries[i].Points > entries[j].Points
+		}
+		return entries[i].ScoreDiff > entries[j].ScoreDiff
+	})
+
+	writeJSON(w, http.StatusOK, entries)
 }

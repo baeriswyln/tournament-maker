@@ -9,6 +9,7 @@ export const useTournamentStore = defineStore('tournament', () => {
   const participants = ref([])
   const encounters = ref([])
   const myEncounters = ref([])
+  const scoreboard = ref([])
   const users = ref([])
   const loading = ref(false)
 
@@ -45,6 +46,12 @@ export const useTournamentStore = defineStore('tournament', () => {
     const { data } = await encountersApi.list(tid, userId)
     if (userId) myEncounters.value = data
     else encounters.value = data
+    return data
+  }
+
+  async function fetchScoreboard(tid) {
+    const { data } = await tournamentsApi.scoreboard(tid)
+    scoreboard.value = data
     return data
   }
 
@@ -106,8 +113,8 @@ export const useTournamentStore = defineStore('tournament', () => {
   }
 
   return {
-    owning, participating, current, participants, encounters, myEncounters, users, loading,
-    fetchAll, fetchOne, fetchParticipants, fetchEncounters, fetchUsers,
+    owning, participating, current, participants, encounters, myEncounters, scoreboard, users, loading,
+    fetchAll, fetchOne, fetchParticipants, fetchEncounters, fetchScoreboard, fetchUsers,
     createTournament, updateTournament, deleteTournament, resetTournament,
     addParticipants, removeParticipant, createEncounters, updateScore, deleteScore,
     createUser,

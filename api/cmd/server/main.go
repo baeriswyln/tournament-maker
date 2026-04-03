@@ -8,7 +8,7 @@ import (
 	"baeriswyl.dev/tournament-maker/internal/handlers"
 	"baeriswyl.dev/tournament-maker/internal/middleware"
 	"baeriswyl.dev/tournament-maker/internal/repository"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -17,7 +17,8 @@ func main() {
 	cfg := config.Load(repository.ValidateUser)
 
 	// ── Database ──────────────────────────────────────────────────────────────
-	db, err := gorm.Open(postgres.Open(cfg.DatabasePath), &gorm.Config{
+	//db, err := gorm.Open(postgres.Open(cfg.DatabasePath), &gorm.Config{
+	db, err := gorm.Open(sqlite.Open("tournament.db"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
@@ -40,7 +41,7 @@ func main() {
 	// ── Handlers ──────────────────────────────────────────────────────────────
 	authHandler := handlers.NewAuthHandler(userRepo, auth)
 	userHandler := handlers.NewUserHandler(userRepo, auth)
-	tourHandler := handlers.NewTournamentHandler(tournamentRepo)
+	tourHandler := handlers.NewTournamentHandler(tournamentRepo, participantRepo)
 	partHandler := handlers.NewParticipantHandler(participantRepo, tournamentRepo, userRepo)
 	encHandler := handlers.NewEncounterHandler(encounterRepo, participantRepo, tournamentRepo, userRepo)
 

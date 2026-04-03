@@ -62,6 +62,7 @@ export const tournamentsApi = {
   update: (id, data) => api.put(`/tournaments/${id}`, data),
   delete: (id) => api.delete(`/tournaments/${id}`),
   reset: (id) => api.delete(`/tournaments/${id}/reset`),
+  scoreboard: (id) => api.get(`/tournaments/${id}/scoreboard`),
 }
 
 // ── Participants ──────────────────────────────────────
