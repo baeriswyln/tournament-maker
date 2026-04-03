@@ -76,6 +76,16 @@ func (p *ParticipantHandler) AddParticipants(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	tournament, err := p.tournaments.GetByID(tournamentId)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "tournament not found")
+		return
+	}
+	if tournament.State != "open" {
+		writeError(w, http.StatusConflict, "tournament is not open for registration")
+		return
+	}
+
 	// owners can add users that the owner owns
 	// other users can only add themselves
 	if (p.tournaments.IsOwner(tournamentId, requesterID) && p.users.IsOwner(body.ID, requesterID)) ||
