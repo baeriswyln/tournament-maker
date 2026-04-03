@@ -8,7 +8,7 @@ import (
 	"baeriswyl.dev/tournament-maker/internal/handlers"
 	"baeriswyl.dev/tournament-maker/internal/middleware"
 	"baeriswyl.dev/tournament-maker/internal/repository"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -18,7 +18,7 @@ func main() {
 
 	// ── Database ──────────────────────────────────────────────────────────────
 	//db, err := gorm.Open(postgres.Open(cfg.DatabasePath), &gorm.Config{
-	db, err := gorm.Open(sqlite.Open("tournament.db"), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(cfg.DatabasePath), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
