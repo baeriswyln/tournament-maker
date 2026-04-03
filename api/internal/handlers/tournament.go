@@ -29,46 +29,48 @@ func NewTournamentHandler(t *repository.TournamentRepository, p *repository.Part
 func (t *TournamentHandler) GetTournaments(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	part, err := t.tournaments.ListParticipating(requesterID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
 		return
 	}
 
 	owned, err := t.tournaments.ListOwned(requesterID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
 		return
 	}
 
-	resp := models.TournamentsResponse{
+	writeJSON(w, http.StatusOK, models.TournamentsResponse{
 		Owning:        owned,
 		Participating: part,
-	}
-
-	writeJSON(w, http.StatusOK, resp)
+	})
 }
 
 func (t *TournamentHandler) GetTournamentSingle(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
+
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if id == "" || err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	tournament, err := t.tournaments.GetByID(tournamentId)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+	if errors.Is(err, repository.ErrNotFound) {
+		writeError(w, r, errTournamentNotFound)
+		return
+	} else if err != nil {
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -78,30 +80,29 @@ func (t *TournamentHandler) GetTournamentSingle(w http.ResponseWriter, r *http.R
 	}
 
 	if t.tournaments.IsRelated(tournamentId, requesterID) {
-		tournamentShort := models.TournamentResponseShort{
+		writeJSON(w, http.StatusOK, models.TournamentResponseShort{
 			Name:           tournament.Name,
 			StartDate:      tournament.StartDate,
 			NbParticipants: tournament.NbParticipants,
 			Format:         tournament.Format,
 			State:          tournament.State,
-		}
-		writeJSON(w, http.StatusOK, tournamentShort)
+		})
 		return
 	}
 
-	writeError(w, http.StatusForbidden, "forbidden")
+	writeError(w, r, errAuthForbidden)
 }
 
 func (t *TournamentHandler) CreateTournament(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok && middleware.HasLogin(r.Context()) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	var body models.TournamentRequest
 	if err := decode(r, &body); err != nil || *body.Name == "" {
-		writeError(w, http.StatusBadRequest, "bad request")
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
@@ -115,7 +116,8 @@ func (t *TournamentHandler) CreateTournament(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := t.tournaments.Create(&tournament); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
+		return
 	}
 
 	writeJSON(w, http.StatusCreated, models.CreateTournamentResponse{ID: tournament.ID})
@@ -124,32 +126,32 @@ func (t *TournamentHandler) CreateTournament(w http.ResponseWriter, r *http.Requ
 func (t *TournamentHandler) UpdateTournament(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok && middleware.HasLogin(r.Context()) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	var body models.TournamentRequest
 	if err := decode(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "bad request")
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	tournament, err := t.tournaments.GetByID(tournamentId)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		writeError(w, http.StatusNotFound, "not found")
+		writeError(w, r, errTournamentNotFound)
 		return
 	} else if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
 		return
 	} else if tournament.OwnerID != requesterID {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
@@ -169,9 +171,8 @@ func (t *TournamentHandler) UpdateTournament(w http.ResponseWriter, r *http.Requ
 		tournament.Format = *body.Format
 	}
 
-	err = t.tournaments.Update(tournament)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+	if err = t.tournaments.Update(tournament); err != nil {
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -181,25 +182,25 @@ func (t *TournamentHandler) UpdateTournament(w http.ResponseWriter, r *http.Requ
 func (t *TournamentHandler) DeleteTournament(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok && middleware.HasLogin(r.Context()) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	if !t.tournaments.IsOwner(tournamentId, requesterID) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
-	err = t.tournaments.Delete(tournamentId)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+	if err = t.tournaments.Delete(tournamentId); err != nil {
+		writeError(w, r, errInternal, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -208,25 +209,25 @@ func (t *TournamentHandler) DeleteTournament(w http.ResponseWriter, r *http.Requ
 func (t *TournamentHandler) ResetTournament(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok && middleware.HasLogin(r.Context()) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	if !t.tournaments.IsOwner(tournamentId, requesterID) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
-	err = t.tournaments.Reset(tournamentId)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+	if err = t.tournaments.Reset(tournamentId); err != nil {
+		writeError(w, r, errInternal, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -235,24 +236,24 @@ func (t *TournamentHandler) ResetTournament(w http.ResponseWriter, r *http.Reque
 func (t *TournamentHandler) GetScoreboard(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if id == "" || err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	tournament, err := t.tournaments.GetByID(tournamentId)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			writeError(w, http.StatusNotFound, "not found")
+			writeError(w, r, errTournamentNotFound)
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -260,13 +261,13 @@ func (t *TournamentHandler) GetScoreboard(w http.ResponseWriter, r *http.Request
 	isRelated := t.tournaments.IsRelated(tournamentId, requesterID)
 
 	if !isOwner && (!isRelated || !tournament.Visibility.Scoreboard) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	entries, err := t.participants.ListScoreboard(tournamentId)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
 		return
 	}
 

@@ -28,13 +28,13 @@ func NewUserHandler(users *repository.UserRepository, auth *middleware.Authentic
 func (u *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	id, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	users, err := u.users.ListByOwnerTournaments(id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -46,18 +46,18 @@ func (u *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 func (u *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var userRequest models.CreateUserRequest
 	if err := decode(r, &userRequest); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
 	if (userRequest.Password == nil) != (userRequest.Username == nil) {
-		writeError(w, http.StatusBadRequest, "both username password are required")
+		writeError(w, r, errUserCredentialsIncomplete)
 		return
 	}
 
 	// maximum length is determined by bcrypt
 	if userRequest.Password != nil && len(*userRequest.Password) < 8 && len([]byte(*userRequest.Password)) >= 72 {
-		writeError(w, http.StatusBadRequest, "password must be at least 8 characters")
+		writeError(w, r, errUserPasswordTooShort)
 		return
 	}
 
@@ -65,7 +65,8 @@ func (u *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if userRequest.Username != nil {
 		hash, err := bcrypt.GenerateFromPassword([]byte(*userRequest.Password), bcrypt.DefaultCost)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "failed to hash password")
+			writeError(w, r, errInternal, err)
+			return
 		}
 		hashString := string(hash)
 		user.Username = userRequest.Username
@@ -74,10 +75,10 @@ func (u *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	if err := u.users.Create(&user); err != nil {
 		if errors.Is(err, repository.ErrConflict) {
-			writeError(w, http.StatusBadRequest, "username already taken")
+			writeError(w, r, errUserUsernameTaken)
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -88,7 +89,7 @@ func (u *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if userRequest.Username == nil {
 		pair, err := u.auth.IssueTokenPair(resp.ID.String(), middleware.RefreshTokenPermanent)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			writeError(w, r, errInternal, err)
 			return
 		}
 
@@ -104,13 +105,13 @@ func (u *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 func (u *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var userRequest models.CreateUserRequest
 	if err := decode(r, &userRequest); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
@@ -120,12 +121,12 @@ func (u *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		var err error
 		user, err = u.users.GetByID(*userRequest.ID)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			writeError(w, r, errInternal, err)
 			return
 		}
 
 		if !user.IsActive || user.Username != nil || user.ID != requesterID {
-			writeError(w, http.StatusForbidden, "forbidden")
+			writeError(w, r, errAuthForbidden)
 			return
 		}
 
@@ -134,18 +135,16 @@ func (u *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 		if err := u.users.Update(user); err != nil {
 			if errors.Is(err, repository.ErrConflict) {
-				writeError(w, http.StatusBadRequest, "username already taken")
+				writeError(w, r, errUserUsernameTaken)
 				return
 			}
-
-			writeError(w, http.StatusInternalServerError, err.Error())
+			writeError(w, r, errInternal, err)
 			return
 		}
 	} else {
 		// a request without login will create a user that has no access.
-
 		if userRequest.VisibleName == "" {
-			writeError(w, http.StatusBadRequest, "name required")
+			writeError(w, r, errUserNameRequired)
 			return
 		}
 
@@ -155,40 +154,37 @@ func (u *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := u.users.Create(user); err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			writeError(w, r, errInternal, err)
 			return
 		}
 	}
 
-	resp := models.CreateUserResponse{
-		ID: user.ID,
-	}
-
-	writeJSON(w, http.StatusCreated, resp)
+	writeJSON(w, http.StatusCreated, models.CreateUserResponse{ID: user.ID})
 }
 
 // GetUserSingle reads out user details of a single user. Can only be requested on the connected user.
 func (u *UserHandler) GetUserSingle(w http.ResponseWriter, r *http.Request) {
 	targetID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	if requesterID != targetID {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	user, err := u.users.GetByID(requesterID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, r, errInternal, err)
+		return
 	}
 
 	writeJSON(w, http.StatusOK, user)
@@ -200,31 +196,31 @@ func (u *UserHandler) GetUserSingle(w http.ResponseWriter, r *http.Request) {
 func (u *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	targetID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	var req models.UpdateUserRequest
 	if err := decode(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
 	user, err := u.users.GetByID(targetID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "user not found")
+		writeError(w, r, errUserNotFound)
 		return
 	}
 
 	// can only modify themselfs, or an unregistered user that participated at minimum one tournament
 	if requesterID != targetID && requesterID != *user.OwnerID {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
@@ -234,18 +230,18 @@ func (u *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	if req.Password != nil {
 		if requesterID != targetID || user.Password == nil {
-			writeError(w, http.StatusForbidden, "forbidden")
+			writeError(w, r, errAuthForbidden)
 			return
 		}
 
 		if len(*req.Password) < 8 {
-			writeError(w, http.StatusBadRequest, "password too short")
+			writeError(w, r, errUserPasswordTooShort)
 			return
 		}
 
 		hash, err := bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "could not hash password")
+			writeError(w, r, errInternal, err)
 			return
 		}
 		s := string(hash)
@@ -253,7 +249,7 @@ func (u *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := u.users.Update(user); err != nil {
-		writeError(w, http.StatusInternalServerError, "could not update user")
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -265,19 +261,18 @@ func (u *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	targetID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	id, ok := middleware.GetIDFromContext(r.Context())
 	if !ok || targetID != id {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
-	repoErr := u.users.SoftDelete(id)
-	if repoErr != nil {
-		writeError(w, http.StatusInternalServerError, repoErr.Error())
+	if err := u.users.SoftDelete(id); err != nil {
+		writeError(w, r, errInternal, err)
 		return
 	}
 

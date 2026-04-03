@@ -25,7 +25,7 @@ func NewAuthHandler(users *repository.UserRepository, auth *middleware.Authentic
 func (a *AuthHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	var body models.LoginRequest
 	if err := decode(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request payload")
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
@@ -34,7 +34,6 @@ func (a *AuthHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		err = bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(body.Password))
 		if err == nil {
 			pair, tokenErr := a.auth.IssueTokenPair(user.ID.String(), middleware.RefreshTokenWeek)
-
 			if tokenErr == nil {
 				resp := models.LoginResponse{
 					RefreshToken: pair.RefreshToken,
@@ -48,18 +47,20 @@ func (a *AuthHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	writeError(w, http.StatusBadRequest, "Invalid username or password")
+	writeError(w, r, errAuthInvalidCredentials)
 }
 
 func (a *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	var body models.RefreshRequest
 	if err := decode(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request payload")
+		writeError(w, r, errRequestInvalidBody)
+		return
 	}
 
 	pair, err := a.auth.Refresh(r.Context(), *body.RefreshToken)
 	if err != nil {
-		writeError(w, http.StatusForbidden, "Invalid refresh token")
+		writeError(w, r, errAuthRefreshInvalid)
+		return
 	}
 
 	writeJSON(w, http.StatusOK, pair)
