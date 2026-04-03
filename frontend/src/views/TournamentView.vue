@@ -101,7 +101,7 @@
 
         <!-- Scoreboard -->
         <div v-else-if="activeTab === 'scoreboard'" key="scoreboard" class="animate-slide-up">
-          <Scoreboard :entries="store.scoreboard" />
+          <Scoreboard :entries="store.scoreboard" :participants="store.participants" :tournament-id="tournamentId" />
         </div>
 
         <!-- Players -->

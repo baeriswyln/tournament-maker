@@ -70,6 +70,7 @@ export default {
   no_upcoming: 'Keine bevorstehenden Begegnungen',
   no_past: 'Noch keine abgeschlossenen Begegnungen',
   no_scores: 'Noch keine Ergebnisse',
+  matches: 'Spiele',
 
   // Encounter
   round: 'Runde',

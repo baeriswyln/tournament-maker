@@ -69,6 +69,7 @@ export default {
   no_upcoming: 'Aucune rencontre à venir',
   no_past: 'Aucune rencontre terminée',
   no_scores: 'Aucun score enregistré',
+  matches: 'Matches',
 
   // Encounter
   round: 'Round',
