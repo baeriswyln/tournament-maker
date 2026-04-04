@@ -64,10 +64,7 @@
             <label class="input-label">{{ t('search_encounters') }}</label>
             <input v-model="upcomingEncounterSearch" type="text" class="input py-2 text-sm"/>
           </div>
-          <div v-if="!filteredUpcomingEncounters.length" class="card p-8 text-center text-sm" style="color: var(--text-muted)">
-            {{ t('no_encounters') }}
-          </div>
-          <div v-else-if="!filteredUpcomingEncounters.length" class="card p-8 text-center">
+          <div v-if="upcomingEncounterSearch && !filteredUpcomingEncounters.length" class="card p-8 text-center">
             <i class="pi pi-check-circle text-3xl mb-3 block" style="color: var(--text-faint)" />
             <p class="text-sm" style="color: var(--text-muted)">{{ t('encounter_not_found') }}</p>
           </div>
