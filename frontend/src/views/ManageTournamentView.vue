@@ -558,7 +558,7 @@ function shuffle(array) {
 
 function generateGroups() {
   const nb_participants = store.participants.length
-  const nb_groups = store.current.format.nb_groups
+  const nb_groups = store.current.format.nb_groups ? store.current.format.nb_groups : 1
   const group_assignments = []
   for (let i = 0; i < nb_participants; i++) {
     group_assignments.push(i % nb_groups);
