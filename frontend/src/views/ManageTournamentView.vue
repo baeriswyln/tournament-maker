@@ -2,9 +2,9 @@
   <div class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-[100vw] lg:max-w-6xl mx-auto">
     <!-- Header -->
     <div class="flex items-center gap-3 mb-6 animate-slide-up">
-      <button @click="$router.back()" class="btn-ghost btn-sm p-2">
+      <RouterLink :to="`/tournaments/${tournamentId}`" class="btn-ghost btn-sm p-2">
         <i class="pi pi-arrow-left"/>
-      </button>
+      </RouterLink>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <h1 class="font-display text-xl lg:text-2xl font-bold truncate" style="color: var(--text-primary)">
