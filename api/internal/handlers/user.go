@@ -151,7 +151,7 @@ func (u *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 		user = &models.User{
 			VisibleName: &userRequest.VisibleName,
-			OwnerID:     &requesterID,
+			ParentID:    &requesterID,
 		}
 
 		if err := u.users.Create(user); err != nil {
@@ -223,7 +223,7 @@ func (u *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// can only modify themselfs, or an unregistered user that participated at minimum one tournament
-	if requesterID != targetID && requesterID != *user.OwnerID {
+	if requesterID != targetID && requesterID != *user.ParentID {
 		writeError(w, http.StatusForbidden, "forbidden")
 		return
 	}

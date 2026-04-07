@@ -22,7 +22,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 
 type User struct {
 	ID          uuid.UUID  `gorm:"type:uuid;primaryKey"     json:"id"`
-	OwnerID     *uuid.UUID `gorm:"type:uuid"                json:"owner_id"`
+	ParentID    *uuid.UUID `gorm:"type:uuid"                json:"parent_id"`
 	VisibleName *string    `gorm:"not null"                 json:"visible_name"`
 	Username    *string    `gorm:"uniqueIndex"              json:"username,omitempty"`
 	Password    *string    `                                json:"-"` // hashed, never serialised
@@ -31,7 +31,7 @@ type User struct {
 	UpdatedAt   time.Time  `                                json:"updated_at"`
 
 	// relations
-	Owner *User `gorm:"foreignKey:OwnerID"                 json:"-"`
+	Parent *User `gorm:"foreignKey:ParentID"                 json:"-"`
 }
 
 // ─── Request / Response DTOs ─────────────────────────────────────────────────

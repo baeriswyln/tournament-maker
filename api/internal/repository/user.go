@@ -77,10 +77,10 @@ func (r *UserRepository) ListByOwnerTournaments(ownerID uuid.UUID) ([]models.Use
 	return users, err
 }
 
-func (r *UserRepository) IsOwner(userID uuid.UUID, ownerID uuid.UUID) bool {
+func (r *UserRepository) IsParent(userID uuid.UUID, parentID uuid.UUID) bool {
 	var count int64
 	r.db.Model(&models.User{}).
-		Where("id = ? AND owner_id = ?", userID, ownerID).
+		Where("id = ? AND parent_id = ?", userID, parentID).
 		Count(&count)
 	return count > 0
 }
@@ -94,7 +94,7 @@ func (r *UserRepository) SoftDelete(id uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	user.OwnerID = nil
+	user.ParentID = nil
 	user.VisibleName = nil
 	user.Username = nil
 	user.Password = nil

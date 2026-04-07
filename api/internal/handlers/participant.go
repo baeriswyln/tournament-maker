@@ -78,7 +78,7 @@ func (p *ParticipantHandler) AddParticipants(w http.ResponseWriter, r *http.Requ
 
 	// owners can add users that the owner owns
 	// other users can only add themselves
-	if (p.tournaments.IsOwner(tournamentId, requesterID) && p.users.IsOwner(body.ID, requesterID)) ||
+	if (p.tournaments.IsOwner(tournamentId, requesterID) && p.users.IsParent(body.ID, requesterID)) ||
 		requesterID == body.ID {
 		err := p.participants.Add(tournamentId, body.ID)
 		if err != nil {
