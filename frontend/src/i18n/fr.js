@@ -51,6 +51,7 @@ export default {
   live: 'En direct',
   total: 'Total',
   new_tournament: 'Nouveau tournoi',
+  join_tournament: 'Joindre le tournoi',
   no_tournaments_title: 'Aucun tournoi',
   no_tournaments_body: "Créez votre premier tournoi ou rejoignez-en un via un lien d'invitation.",
   create_tournament: 'Créer un tournoi',
@@ -79,6 +80,28 @@ export default {
   score_proposed_notice: 'Score proposé — en attente de confirmation',
   opponent_must_agree: 'Votre adversaire doit confirmer le résultat.',
   you: 'vous',
+  reset_score: 'Réinitialiser le résultat',
+  delete_encounter: 'Supprimer la rencontre',
+  confirm_delete_encounter: 'Voulez-vous supprimer la rencontre "{description}" ?',
+  confirm_score: 'Confirmer le résultat',
+  confirm_reset_score: 'Voulez-vous réinitialiser le résultat de la rencontre "{description}" ?',
+  score_reset: 'Résultat réinitialisé !',
+  encounter_deleted: 'Rencontre supprimée !',
+  score_proposed_notice_with_name: 'Résultat proposé par {name} — en attente de confirmation',
+  create_encounter_generate: 'Générer',
+  create_encounter_manual: 'Manuel',
+  group: 'Groupe',
+  generate_groups: 'Générer les groupes',
+  generate_encounters: 'Générer les rencontres',
+  generate_encounters_description: 'Génération automatique des rencontres. Au sein d\'un groupe, tous les participants se rencontrent une fois.',
+  encounter_not_found: 'La recherche n\'a retourné aucune rencontre',
+  search_encounters: 'Rechercher des rencontres',
+  
+  // Encounter participants
+  create_managed_participant: "Verwalteter Teilnehmer erstellen",
+  managed_participant_description: "Ein verwalteter Teilnehmer ist ein Turnierteilnehmer, der nur für dieses Turnier existiert - es kann keine Verbindung zu diesem Konto erstellt werden. Resultate müssen vom Turnierersteller eingetragen werden.",
+  managed_participant_name: "Name",
+  create: "Erstellen",
 
   // Encounter states
   state_planned: 'Planifié',
@@ -109,6 +132,19 @@ export default {
   save_changes: 'Enregistrer',
   updated: 'Mis à jour !',
   tournament_created: 'Tournoi créé !',
+
+  // Tournament join form
+  scan_qr_code: 'Scanner le code QR',
+  join_with_code: 'ou rejoindre avec un ID de tournoi',
+  join: 'Rejoindre',
+  joined: 'Rejoint avec succès !',
+  camera_not_started: 'Caméra non démarrée',
+  camera_request_permission: 'Demande d\'accès à la caméra...',
+  camera_not_available: 'Caméra non disponible',
+  camera_stopped: 'Caméra arrêtée',
+  retry: 'Réessayer',
+  starting: 'Démarrage en cours...',
+  scanned: 'Code reconnu !',
 
   // Manage view
   admin_panel: 'Panneau admin',

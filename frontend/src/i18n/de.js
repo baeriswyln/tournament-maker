@@ -96,6 +96,7 @@ export default {
   generate_encounters_description: 'Automatisches Generieren von Begegnungen. Innerhalb einer Gruppe treffen alle Teilnehmenden einmal aufeinander.',
   encounter_not_found: 'Suche ergab keine Begegnungen',
   search_encounters: 'Suche nach Begegnungen',
+  
   // Encounter participants
   create_managed_participant: "Verwalteter Teilnehmer erstellen",
   managed_participant_description: "Ein verwalteter Teilnehmer ist ein Turnierteilnehmer, der nur für dieses Turnier existiert - es kann keine Verbindung zu diesem Konto erstellt werden. Resultate müssen vom Turnierersteller eingetragen werden.",

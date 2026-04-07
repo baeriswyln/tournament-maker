@@ -51,6 +51,7 @@ export default {
   live: 'Live',
   total: 'Total',
   new_tournament: 'New Tournament',
+  join_tournament: 'Join Tournament',
   no_tournaments_title: 'No tournaments yet',
   no_tournaments_body: 'Create your first tournament or join one using an invite link.',
   create_tournament: 'Create Tournament',
@@ -79,6 +80,28 @@ export default {
   score_proposed_notice: 'Score proposed — waiting for confirmation',
   opponent_must_agree: 'Your opponent must agree for the result to be final.',
   you: 'you',
+  reset_score: 'Reset score',
+  delete_encounter: 'Delete encounter',
+  confirm_delete_encounter: 'Do you want to delete the encounter "{description}"?',
+  confirm_score: 'Confirm score',
+  confirm_reset_score: 'Do you want to reset the score of the encounter "{description}"?',
+  score_reset: 'Score reset!',
+  encounter_deleted: 'Encounter deleted!',
+  score_proposed_notice_with_name: 'Score proposed by {name} — waiting for confirmation',
+  create_encounter_generate: 'Generate',
+  create_encounter_manual: 'Manual',
+  group: 'Group',
+  generate_groups: 'Generate groups',
+  generate_encounters: 'Generate encounters',
+  generate_encounters_description: 'Automatically generate encounters. Within a group, all participants meet each other once.',
+  encounter_not_found: 'Search returned no encounters',
+  search_encounters: 'Search for encounters',
+
+  // Encounter participants
+  create_managed_participant: "Créer un participant géré",
+  managed_participant_description: "Un participant géré est un participant au tournoi qui n'existe que pour ce tournoi — aucun lien ne peut être créé avec un compte. Les résultats doivent être saisis par le créateur du tournoi.",
+  managed_participant_name: "Nom",
+  create: "Créer",
 
   // Encounter states
   state_planned: 'Planned',
@@ -109,6 +132,19 @@ export default {
   save_changes: 'Save Changes',
   updated: 'Updated!',
   tournament_created: 'Tournament created!',
+
+  // Tournament join form
+  scan_qr_code: 'Scan QR code',
+  join_with_code: 'or join with tournament ID',
+  join: 'Join',
+  joined: 'Successfully joined!',
+  camera_not_started: 'Camera not started',
+  camera_request_permission: 'Requesting camera access...',
+  camera_not_available: 'Camera not available',
+  camera_stopped: 'Camera stopped',
+  retry: 'Retry',
+  starting: 'Starting...',
+  scanned: 'Code recognized!',
 
   // Manage view
   admin_panel: 'Admin Panel',
