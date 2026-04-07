@@ -99,10 +99,24 @@
     <!-- Sign out -->
     <button @click="handleLogout"
       class="w-full btn-secondary flex items-center justify-center gap-2 animate-slide-up"
-      style="animation-delay: 0.25s; color: var(--danger); border-color: rgba(239,68,68,0.2)">
+      style="animation-delay: 0.2s; color: var(--danger); border-color: rgba(239,68,68,0.2)">
       <i class="pi pi-sign-out" />
       {{ t('sign_out') }}
     </button>
+
+    <!-- About -->
+    <div class="mt-10 text-center animate-slide-up" style="animation-delay: 0.25s">
+      <div class="space-y-1.5">
+        <p class="text-xs" style="color: var(--text-faint)">
+          {{ t('version_label') }} · {{ t('version', {version, date: d(buildDate, 'datetime')}) }}
+        </p>
+        <p class="text-xs" style="color: var(--text-faint)">
+          {{ t('built_with') }} Vue 3 · Vite · PrimeVue
+        </p>
+        <p class="text-xs mt-6" style="color: var(--text-faint)">© {{ new Date().getFullYear() }} - Made with ☕ by <a href="https://baeriswyl.dev" target="_blank"
+            style="color: var(--brand); text-decoration: underline; text-underline-offset: 2px;">baeriswyl.dev</a></p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -113,11 +127,16 @@ import { useAuthStore } from '@/stores/auth'
 import { usersApi } from '@/api'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '@/i18n/index.js'
+import { useApiError } from '@/composables/useApiError.js'
 
 const auth = useAuthStore()
 const router = useRouter()
 const toast = useToast()
-const { t } = useI18n()
+const { t, d } = useI18n()
+const { resolveApiError } = useApiError()
+
+const version = __APP_VERSION__
+const buildDate = new Date(__BUILD_DATE__)
 
 const saving = ref(false)
 const saveError = ref('')
@@ -149,7 +168,8 @@ async function handleSave() {
     form.value = { visible_name: '', password: '' }
     toast.add({ severity: 'success', summary: t('profile_updated'), life: 2000 })
   } catch (e) {
-    saveError.value = e.response?.data?.message || t('error')
+    const { title, detail } = resolveApiError(e)
+    saveError.value = detail || title
   } finally {
     saving.value = false
   }
@@ -169,7 +189,8 @@ async function handleUpgrade() {
     showUpgrade.value = false
     toast.add({ severity: 'success', summary: t('upgrade_success'), life: 2000 })
   } catch (e) {
-    toast.add({ severity: 'error', summary: t('error'), detail: e.response?.data?.message || '', life: 3000 })
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   } finally {
     saving.value = false
   }

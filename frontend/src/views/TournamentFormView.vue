@@ -102,12 +102,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTournamentStore } from '@/stores/tournament'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '@/i18n/index.js'
+import { useApiError } from '@/composables/useApiError.js'
 
 const route = useRoute()
 const router = useRouter()
 const store = useTournamentStore()
 const toast = useToast()
 const { t } = useI18n()
+const { resolveApiError } = useApiError()
 
 const isEditing = !!route.params.id
 const loading = ref(false)
@@ -166,7 +168,8 @@ async function handleSubmit() {
       router.push(`/tournaments/${id}/manage`)
     }
   } catch (e) {
-    error.value = e.response?.data?.message || t('error')
+    const { title, detail } = resolveApiError(e)
+    error.value = detail || title
   } finally {
     loading.value = false
   }

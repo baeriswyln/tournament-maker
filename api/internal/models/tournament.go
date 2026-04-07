@@ -101,3 +101,14 @@ type TournamentsResponse struct {
 	Owning        []Tournament `json:"owning"`
 	Participating []Tournament `json:"participating"`
 }
+
+type ScoreboardEntry struct {
+	ID          uuid.UUID `json:"id"`
+	VisibleName *string   `json:"visible_name"`
+	Played      int       `json:"played"`
+	Won         int       `json:"won"`
+	Draw        int       `json:"draw"`
+	Lost        int       `json:"lost"`
+	ScoreDiff   int       `json:"score_diff"`
+	Points      int       `json:"points"`
+}

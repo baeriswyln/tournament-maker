@@ -5,12 +5,15 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"baeriswyl.dev/tournament-maker/config"
+	"baeriswyl.dev/tournament-maker/internal/apierror"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -200,17 +203,16 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		raw, err := extractBearerToken(r)
 		if err != nil {
-			http.Error(w, "missing or malformed Authorization header", http.StatusUnauthorized)
+			writeAuthError(w, r, authErrTokenMissing)
 			return
 		}
 
 		claims, err := a.parseAccessToken(raw)
 		if err != nil {
-			switch {
-			case errors.Is(err, ErrTokenExpired):
-				http.Error(w, "access token expired", http.StatusUnauthorized)
-			default:
-				http.Error(w, "invalid access token", http.StatusUnauthorized)
+			if errors.Is(err, ErrTokenExpired) {
+				writeAuthError(w, r, authErrTokenExpired)
+			} else {
+				writeAuthError(w, r, authErrTokenInvalid)
 			}
 			return
 		}
@@ -219,6 +221,38 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, ContextKeyClaims, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+var (
+	authErrTokenMissing = &apierror.APIError{
+		Status:    http.StatusUnauthorized,
+		ErrorCode: "AUTH_TOKEN_MISSING",
+		Title:     "Authentication required",
+		Details:   "No access token was provided.",
+	}
+	authErrTokenExpired = &apierror.APIError{
+		Status:    http.StatusUnauthorized,
+		ErrorCode: "AUTH_TOKEN_EXPIRED",
+		Title:     "Token expired",
+		Details:   "The access token has expired. Please refresh your session.",
+	}
+	authErrTokenInvalid = &apierror.APIError{
+		Status:    http.StatusUnauthorized,
+		ErrorCode: "AUTH_TOKEN_INVALID",
+		Title:     "Invalid token",
+		Details:   "The provided access token is invalid.",
+	}
+)
+
+func writeAuthError(w http.ResponseWriter, r *http.Request, e *apierror.APIError) {
+	switch e.ErrorCode {
+	case "AUTH_TOKEN_INVALID":
+		log.Printf("[SECURITY] %s %s - %s from %s", r.Method, r.URL.Path, e.ErrorCode, r.RemoteAddr)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(e.Status)
+	b, _ := json.Marshal(e)
+	_, _ = w.Write(b)
 }
 
 // parseAccessToken verifies the signature and expiry of an access token.

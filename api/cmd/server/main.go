@@ -17,6 +17,7 @@ func main() {
 	cfg := config.Load(repository.ValidateUser)
 
 	// ── Database ──────────────────────────────────────────────────────────────
+	//db, err := gorm.Open(postgres.Open(cfg.DatabasePath), &gorm.Config{
 	db, err := gorm.Open(postgres.Open(cfg.DatabasePath), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
@@ -40,7 +41,7 @@ func main() {
 	// ── Handlers ──────────────────────────────────────────────────────────────
 	authHandler := handlers.NewAuthHandler(userRepo, auth)
 	userHandler := handlers.NewUserHandler(userRepo, auth)
-	tourHandler := handlers.NewTournamentHandler(tournamentRepo)
+	tourHandler := handlers.NewTournamentHandler(tournamentRepo, participantRepo)
 	partHandler := handlers.NewParticipantHandler(participantRepo, tournamentRepo, userRepo)
 	encHandler := handlers.NewEncounterHandler(encounterRepo, participantRepo, tournamentRepo, userRepo)
 

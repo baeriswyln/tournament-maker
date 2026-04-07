@@ -64,10 +64,7 @@
             <label class="input-label">{{ t('search_encounters') }}</label>
             <input v-model="upcomingEncounterSearch" type="text" class="input py-2 text-sm"/>
           </div>
-          <div v-if="!filteredUpcomingEncounters.length" class="card p-8 text-center text-sm" style="color: var(--text-muted)">
-            {{ t('no_encounters') }}
-          </div>
-          <div v-else-if="!filteredUpcomingEncounters.length" class="card p-8 text-center">
+          <div v-if="upcomingEncounterSearch && !filteredUpcomingEncounters.length" class="card p-8 text-center">
             <i class="pi pi-check-circle text-3xl mb-3 block" style="color: var(--text-faint)" />
             <p class="text-sm" style="color: var(--text-muted)">{{ t('encounter_not_found') }}</p>
           </div>
@@ -101,7 +98,7 @@
 
         <!-- Scoreboard -->
         <div v-else-if="activeTab === 'scoreboard'" key="scoreboard" class="animate-slide-up">
-          <Scoreboard :participants="store.participants" />
+          <Scoreboard :entries="store.scoreboard" :participants="store.participants" :tournament-id="tournamentId" />
         </div>
 
         <!-- Players -->
@@ -116,13 +113,6 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium truncate" style="color: var(--text-primary)">{{ p.visible_name }}</p>
-                <p class="text-xs" style="color: var(--text-muted)">
-                  {{ p.encounters?.finished || 0 }} / {{ p.encounters?.total || 0 }} {{ t('played').toLowerCase() }}
-                </p>
-              </div>
-              <div class="text-right">
-                <p class="font-display font-bold" style="color: var(--text-primary)">{{ p.encounters?.score || 0 }}</p>
-                <p class="text-xs" style="color: var(--text-muted)">{{ t('pts') }}</p>
               </div>
             </div>
           </div>
@@ -143,12 +133,14 @@ import EncounterRow from '@/components/EncounterRow.vue'
 import Scoreboard from '@/components/Scoreboard.vue'
 import {useToast} from "primevue/usetoast";
 import router from "../router/index.js";
+import { useApiError } from '@/composables/useApiError.js'
 
 const route = useRoute()
 const auth = useAuthStore()
 const toast = useToast()
 const store = useTournamentStore()
 const { t, d } = useI18n()
+const { resolveApiError } = useApiError()
 const tournamentId = route.params.id
 const activeTab = ref('upcoming')
 const loading = ref(true)
@@ -214,7 +206,8 @@ function formatDate(date) {
 async function refreshEncounters() {
   await Promise.all([
     store.fetchEncounters(tournamentId, auth.user?.id),
-    store.fetchParticipants(tournamentId)
+    store.fetchParticipants(tournamentId),
+    store.fetchScoreboard(tournamentId),
   ])
 }
 
@@ -224,10 +217,12 @@ onMounted(async () => {
     await Promise.all([
       store.fetchOne(tournamentId),
       store.fetchParticipants(tournamentId),
-      store.fetchEncounters(tournamentId, auth.user?.id)
+      store.fetchEncounters(tournamentId, auth.user?.id),
+      store.fetchScoreboard(tournamentId),
     ])
   } catch (e) {
-    toast.add({ severity: 'error', summary: t('forbidden'),  life: 2000 })
+    const { title, detail } = resolveApiError(e)
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
     router.push('/')
   }
   loading.value = false

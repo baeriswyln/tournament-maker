@@ -4,7 +4,9 @@
     <div class="card overflow-hidden mb-4 animate-slide-up" style="animation-delay: 0.05s">
 
       <!-- Viewfinder -->
-      <div class="relative aspect-square w-full" style="background: #000">
+      <div class="relative w-full transition-all duration-300"
+           :class="result ? 'h-28' : 'aspect-square'"
+           style="background: #000">
         <video
             ref="videoEl"
             class="w-full h-full object-cover"
@@ -110,6 +112,7 @@ import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '@/i18n/index.js'
+import { useApiError } from '@/composables/useApiError.js'
 import { useTournamentStore } from '@/stores/tournament'
 import {useAuthStore} from "@/stores/auth.js";
 
@@ -118,6 +121,7 @@ const toast = useToast()
 const auth = useAuthStore()
 const store = useTournamentStore()
 const { t } = useI18n()
+const { resolveApiError } = useApiError()
 
 // ── Refs ──────────────────────────────────────────────────
 const videoEl = ref(null)
@@ -148,8 +152,9 @@ async function submit() {
     toast.add({severity: 'success', summary: t('joined'), life: 2000})
     router.push(`/tournaments/${form.value.id}`)
   } catch (e) {
-    errorMsg.value = e.response?.data?.message || t('error')
-    toast.add({severity: 'error', summary: errorMsg.value, life: 2000})
+    const { title, detail } = resolveApiError(e)
+    errorMsg.value = detail || title
+    toast.add({ severity: 'error', summary: title, detail, life: 4000 })
   } finally {
     loading.value = false
   }
@@ -284,20 +289,12 @@ function handleDetected(raw) {
 
 function onManualInput() {
   // Also run extraction when user pastes a full URL
-  id.value = extractId(id.value)
-}
-
-// ── Navigation ────────────────────────────────────────────
-function confirm() {
-  if (!id.value) return
-  stopCamera()
-  // Navigate to the tournament — uses the extracted UUID
-  router.push(`/tournaments/${id.value}`)
+  form.value.id = extractId(form.value.id)
 }
 
 function reset() {
   result.value = ''
-  id.value = ''
+  form.value.id = ''
   errorMsg.value = ''
   startCamera()
 }

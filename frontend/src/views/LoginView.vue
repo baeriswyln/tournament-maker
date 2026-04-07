@@ -25,7 +25,7 @@
           </svg>
         </div>
         <h1 class="font-display text-3xl font-bold" style="color: var(--text-primary)">{{ t('app_name') }}</h1>
-        <p class="text-sm mt-1" style="color: var(--text-muted)">{{ t('version', {version, date: d(buildDate, 'datetime')}) }}</p>
+        <p class="text-sm mt-1" style="color: var(--text-muted)">{{ t('version_label')}} {{ t('version', {version, date: d(buildDate, 'datetime')}) }}</p>
       </div>
 
       <!-- Tab switcher -->
@@ -127,12 +127,14 @@ import { useToast } from 'primevue/usetoast'
 import { useI18n } from '@/i18n/index.js'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import { useApiError } from '@/composables/useApiError.js'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const toast = useToast()
 const { t, d } = useI18n()
+const { resolveApiError } = useApiError()
 
 const version = __APP_VERSION__
 const buildDate = new Date(__BUILD_DATE__)
@@ -157,9 +159,9 @@ async function handleLogin() {
   try {
     await auth.login(loginForm.value.username, loginForm.value.password)
     router.push(route.query.redirect || '/')
-  } catch (e){
-    console.error(e)
-    loginError.value = t('login_error')
+  } catch (e) {
+    const { title, detail } = resolveApiError(e)
+    loginError.value = detail || title
   } finally {
     loading.value = false
   }
@@ -176,10 +178,14 @@ async function handleRegister() {
     if (registerForm.value.username) payload.username = registerForm.value.username
     if (registerForm.value.password) payload.password = registerForm.value.password
     await auth.register(payload)
-    toast.add({ severity: 'success', summary: t('success'), detail: t('tournament_created'), life: 3000 })
+    if (registerForm.value.username && registerForm.value.password && !auth.isAuthenticated) {
+      await auth.login(registerForm.value.username, registerForm.value.password)
+    }
+    toast.add({ severity: 'success', summary: t('success'), detail: t('register'), life: 3000 })
     router.push('/')
-  } catch {
-    registerError.value = t('register_error')
+  } catch (e) {
+    const { title, detail } = resolveApiError(e)
+    registerError.value = detail || title
   } finally {
     loading.value = false
   }

@@ -33,17 +33,16 @@ func NewRouter(
 		}))
 
 		r.Post("/auth", hAuth.Authenticate)
+		r.Put("/auth", hAuth.Refresh)
 
 		// Registrations without a login get a refresh token that is valid indefinitely.
 		// On token refresh with such a token, the database is consulted to check if the user still has no login.
 		// If that is not the case, the refresh fails.
 		r.Post("/register", hUser.RegisterUser)
-		
+
 		r.Group(func(r chi.Router) {
 			r.Use(auth.Middleware)
-			
-			r.Put("/auth", hAuth.Refresh)
-			
+
 			r.Route("/users", func(r chi.Router) {
 				r.Get("/", hUser.GetUsers)
 				r.Post("/", hUser.CreateUser)
@@ -54,7 +53,7 @@ func NewRouter(
 					r.Delete("/", hUser.DeleteUser)
 				})
 			})
-			
+
 			r.Route("/tournaments", func(r chi.Router) {
 				r.Get("/", hTour.GetTournaments)
 				r.Post("/", hTour.CreateTournament)
@@ -64,13 +63,15 @@ func NewRouter(
 					r.Put("/", hTour.UpdateTournament)
 					r.Delete("/", hTour.DeleteTournament)
 					r.Delete("/reset", hTour.ResetTournament)
-					
+
 					r.Route("/participants", func(r chi.Router) {
 						r.Get("/", hPart.GetParticipants)
 						r.Post("/", hPart.AddParticipants)
 						r.Delete("/", hPart.DeleteParticipant)
 					})
-					
+
+					r.Get("/scoreboard", hTour.GetScoreboard)
+
 					r.Route("/encounters", func(r chi.Router) {
 						r.Get("/", hEnc.GetEncounters)
 						r.Post("/", hEnc.CreateEncounters)

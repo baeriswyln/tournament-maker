@@ -12,7 +12,6 @@ import (
 	"baeriswyl.dev/tournament-maker/internal/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type EncounterHandler struct {
@@ -34,25 +33,26 @@ func NewEncounterHandler(
 func (e *EncounterHandler) GetEncounters(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
+
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if id == "" || err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	userId := r.URL.Query().Get("user_id")
 	userUuid, err := uuid.Parse(userId)
 	if userId != "" && err != nil {
-		writeError(w, http.StatusBadRequest, "invalid user id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	if !e.tournaments.IsRelated(tournamentId, requesterID) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
@@ -64,7 +64,7 @@ func (e *EncounterHandler) GetEncounters(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error")
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -74,24 +74,25 @@ func (e *EncounterHandler) GetEncounters(w http.ResponseWriter, r *http.Request)
 func (e *EncounterHandler) CreateEncounters(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
+
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if id == "" || err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	if !e.tournaments.IsOwner(tournamentId, requesterID) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	var encounters []models.CreateEncounterRequest
 	if err := decode(r, &encounters); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid body")
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
@@ -102,13 +103,11 @@ func (e *EncounterHandler) CreateEncounters(w http.ResponseWriter, r *http.Reque
 			PartyA:       encounter.PartyA,
 			PartyB:       encounter.PartyB,
 			Round:        encounter.Round,
-			ScoreA:       nil,
-			ScoreB:       nil,
 		}
 	}
 
 	if err := e.encounters.CreateBatch(encounterModels); err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error")
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -118,33 +117,35 @@ func (e *EncounterHandler) CreateEncounters(w http.ResponseWriter, r *http.Reque
 func (e *EncounterHandler) UpdateEncounterScore(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
+
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if id == "" || err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	var body models.UpdateEncounterRequest
 	if err := decode(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid body")
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
 	if body.PartyA != requesterID && body.PartyB != requesterID && !e.tournaments.IsOwner(tournamentId, requesterID) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	encounter, err := e.encounters.Get(tournamentId, body.PartyA, body.PartyB, body.Round)
-	if err != nil && err != gorm.ErrRecordNotFound {
-		writeError(w, http.StatusNotFound, "not found")
-		return
-	} else if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error")
+	if err != nil {
+		if err == repository.ErrNotFound {
+			writeError(w, r, errEncounterNotFound)
+		} else {
+			writeError(w, r, errInternal, err)
+		}
 		return
 	}
 
@@ -156,7 +157,7 @@ func (e *EncounterHandler) UpdateEncounterScore(w http.ResponseWriter, r *http.R
 		encounter.VoterID = &requesterID
 
 		if err := e.encounters.Update(encounter); err != nil {
-			writeError(w, http.StatusInternalServerError, "internal server error")
+			writeError(w, r, errInternal, err)
 			return
 		}
 
@@ -166,7 +167,7 @@ func (e *EncounterHandler) UpdateEncounterScore(w http.ResponseWriter, r *http.R
 
 	// participants can either vote for a score, or confirm a voted score.
 	if encounter.PartyA != requesterID && encounter.PartyB != requesterID {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
@@ -177,17 +178,17 @@ func (e *EncounterHandler) UpdateEncounterScore(w http.ResponseWriter, r *http.R
 		encounter.State = models.EncounterStateVoted
 	} else if encounter.State == models.EncounterStateVoted {
 		if *encounter.ScoreA != *body.ScoreA || *encounter.ScoreB != *body.ScoreB || *encounter.VoterID == requesterID {
-			writeError(w, http.StatusForbidden, "forbidden")
+			writeError(w, r, errEncounterConfirmForbidden)
 			return
 		}
 		encounter.State = models.EncounterStateFinal
 	} else {
-		writeError(w, http.StatusBadRequest, "bad request")
+		writeError(w, r, errEncounterAlreadyFinal)
 		return
 	}
 
 	if err := e.encounters.Update(encounter); err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error")
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -197,35 +198,36 @@ func (e *EncounterHandler) UpdateEncounterScore(w http.ResponseWriter, r *http.R
 func (e *EncounterHandler) DeleteEncounterScore(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
+
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if id == "" || err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	if !e.tournaments.IsOwner(tournamentId, requesterID) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	var body models.DeleteEncounterRequest
 	if err := decode(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
 	if body.Delete {
 		if err := e.encounters.DeleteEncounter(tournamentId, body.PartyA, body.PartyB, body.Round); err != nil {
-			writeError(w, http.StatusInternalServerError, "internal server error")
+			writeError(w, r, errInternal, err)
 			return
 		}
 	} else {
 		if err := e.encounters.ClearScore(tournamentId, body.PartyA, body.PartyB, body.Round); err != nil {
-			writeError(w, http.StatusInternalServerError, "internal server error")
+			writeError(w, r, errInternal, err)
 			return
 		}
 	}

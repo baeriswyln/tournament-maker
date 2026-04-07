@@ -31,25 +31,25 @@ func NewParticipantHandler(
 func (p *ParticipantHandler) GetParticipants(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id: %s - %s")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	if !p.tournaments.IsRelated(tournamentId, requesterID) {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	parts, err := p.tournaments.ListParticipants(tournamentId)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error")
+		writeError(w, r, errInternal, err)
 		return
 	}
 
@@ -59,20 +59,30 @@ func (p *ParticipantHandler) GetParticipants(w http.ResponseWriter, r *http.Requ
 func (p *ParticipantHandler) AddParticipants(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	var body models.AddParticipantRequest
 	if err := decode(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, r, errRequestInvalidBody)
+		return
+	}
+
+	tournament, err := p.tournaments.GetByID(tournamentId)
+	if err != nil {
+		writeError(w, r, errTournamentNotFound)
+		return
+	}
+	if tournament.State != "open" {
+		writeError(w, r, errTournamentNotOpen)
 		return
 	}
 
@@ -80,46 +90,44 @@ func (p *ParticipantHandler) AddParticipants(w http.ResponseWriter, r *http.Requ
 	// other users can only add themselves
 	if (p.tournaments.IsOwner(tournamentId, requesterID) && p.users.IsParent(body.ID, requesterID)) ||
 		requesterID == body.ID {
-		err := p.participants.Add(tournamentId, body.ID)
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "internal server error")
+		if err := p.participants.Add(tournamentId, body.ID); err != nil {
+			writeError(w, r, errInternal, err)
 			return
 		}
 		writeJSON(w, http.StatusCreated, body)
 		return
 	}
 
-	writeError(w, http.StatusForbidden, "forbidden")
+	writeError(w, r, errAuthForbidden)
 }
 
 func (p *ParticipantHandler) DeleteParticipant(w http.ResponseWriter, r *http.Request) {
 	requesterID, ok := middleware.GetIDFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	tournamentId, err := uuid.Parse(id)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid tournament id")
+		writeError(w, r, errRequestInvalidID)
 		return
 	}
 
 	var body models.DeleteParticipantRequest
 	if err := decode(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, r, errRequestInvalidBody)
 		return
 	}
 
 	if !p.tournaments.IsOwner(tournamentId, requesterID) && requesterID != body.ID {
-		writeError(w, http.StatusForbidden, "forbidden")
+		writeError(w, r, errAuthForbidden)
 		return
 	}
 
-	err = p.participants.Remove(tournamentId, body.ID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error")
+	if err = p.participants.Remove(tournamentId, body.ID); err != nil {
+		writeError(w, r, errInternal, err)
 		return
 	}
 
