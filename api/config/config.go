@@ -39,7 +39,7 @@ func Load(userValidatorFunc UserValidatorFunc) *Config {
 
 	dbPath := os.Getenv("DB_CONNECTION_PATH")
 	if dbPath == "" {
-		dbPath = "tournament.db"
+		dbPath = "host=localhost user=myuser password=mypassword dbname=mydb port=5432 sslmode=disable"
 	}
 
 	jwtAccessSecret := os.Getenv("JWT_ACCESS_SECRET")
